@@ -27,19 +27,59 @@ onMounted(() => {
 
   const myOverview =
       new go.Overview("myOverviewDiv",
-          { observed: myDiagram });
+          {observed: myDiagram});
   console.log(myOverview)
+
+  const zoomSlider = new ZoomSlider(myDiagram)
+
+  document.getElementById("zoomToFit").addEventListener("click", () => myDiagram.commandHandler.zoomToFit())
+  document.getElementById("centerRoot").addEventListener("click", () => {
+    myDiagram.scale = 1;
+    myDiagram.commandHandler.scrollToPart(myDiagram.findNodeForKey(1));
+  })
+
+  // ------------------------- zoomSlider (search)
+  document.getElementById('myZoomSlider').addEventListener('input', function () {
+    // console.log('value ---------------', parseFloat(value))
+    myDiagram.scale = parseFloat(this.value);
+  });
 })
 </script>
 
 
 <template>
-  <div id="myDiagramDiv" style="width:1000px; height:80vh;"></div>
-  <div id="myOverviewDiv" style="width:150px; height:150px; border: 5px solid orangered"></div>
+  <div class="parent-diagram">
+    <div id="myDiagramDiv" style="width:1000px; height:80vh;"></div>
+
+    <!--  Overview map  -->
+    <div id="myOverviewDiv" style="width:150px; height:150px; border: 5px solid orangered"></div>
+    <!--  zoom slider (search)  -->
+    <input type="range" id="myZoomSlider" min="0.1" max="2" step="0.1" value="1"/>
+
+    <!--  zoom slider  -->
+    <!--    <div id="zoomSlider" style="width:150px; height:150px;"></div>-->
+
+    <p class="button-zoom">
+      <button id="zoomToFit">Zoom to Fit</button>
+      <button id="centerRoot">Center on root</button>
+    </p>
+  </div>
+
 </template>
 
 
 <style scoped>
+.parent-diagram {
+  position: relative;
+}
+
+#myZoomSlider {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  z-index: 99;
+}
+
 #myDiagramDiv {
   border: 4px solid green;
   margin: 0 auto;
@@ -47,5 +87,27 @@ onMounted(() => {
 
 #myOverviewDiv {
   margin: 0 auto;
+}
+
+.button-zoom {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.button-zoom button {
+  font-family: "JetBrains Mono Light", ui-monospace;
+  font-size: 1rem;
+  background: #dfadfc;
+  font-weight: bold;
+  border: none;
+  padding: 1.2rem;
+  border-radius: 5px;
+}
+
+.button-zoom button:hover {
+  background: #c597fc;
+  transition: 0.2s ease;
 }
 </style>
