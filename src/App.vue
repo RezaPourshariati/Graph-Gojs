@@ -28,6 +28,7 @@ onMounted(() => {
   const myOverview =
       new go.Overview("myOverviewDiv",
           { observed: myDiagram });
+  console.log(myOverview)
 })
 </script>
 
