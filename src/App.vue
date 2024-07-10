@@ -9,8 +9,14 @@ onMounted(() => {
 
   const myDiagram = new go.Diagram("myDiagramDiv", {
     "undoManager.isEnabled": true,
-    // layout: new go.TreeLayout({ angle: 90, layerSpacing: 35 })
+    // layout: new go.LayeredDigraphLayout({direction: 90, layerSpacing: 35})
   });  // enable undo & redo
+
+  // also we can do like this for diagram layout
+  myDiagram.layout = new go.LayeredDigraphLayout({
+    direction: 90,
+    layerSpacing: 150,
+  })
 
   // define a simple Node template
   myDiagram.nodeTemplate = new go.Node("Auto")  // the Shape will automatically surround the TextBlock
@@ -22,12 +28,29 @@ onMounted(() => {
           .bind("text", "hadith"))  // TextBlock.text is bound to Node.data.key
   // but use the default Link template, by not setting Diagram.linkTemplate
 
+  // myDiagram.linkTemplate = new go.Link()
+  //         .add(
+  //             new go.Shape( { strokeWidth: 8 }),  // thick path
+  //             new go.Shape( { toArrow: "Standard" })
+  //         );
+
+  myDiagram.linkTemplate = new go.Link({
+    // curve: go.Curve.Bezier,
+    fromEndSegmentLength: 20,
+    toEndSegmentLength: 20,
+    relinkableFrom: true,
+    relinkableTo: true,
+    routing: go.Routing.Orthogonal,
+    corner: 25
+  })
+      .add(new go.Shape({stroke: '#555555', strokeWidth: 4}))
+      .add(new go.Shape({toArrow: 'Standard', stroke: '#555555', strokeWidth: 5}))
+
+
   // create the model data that will be represented by Nodes and Links
   myDiagram.model = new go.GraphLinksModel(hadithData, relationHadithData)
 
-  const myOverview =
-      new go.Overview("myOverviewDiv",
-          {observed: myDiagram});
+  const myOverview = new go.Overview("myOverviewDiv", {observed: myDiagram});
   console.log(myOverview)
 
   const zoomSlider = new ZoomSlider(myDiagram)
