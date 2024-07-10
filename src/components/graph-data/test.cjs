@@ -1,7 +1,7 @@
 const fs = require('fs')
 
 // Read the raw data from the text file
-const rawData = fs.readFileSync('data.txt', 'utf-8')
+const rawData = fs.readFileSync('hadithGraphRawData.txt', 'utf-8')
 
 // Split the data by rows
 const rows = rawData.trim().split('\n')
@@ -20,7 +20,7 @@ rows.forEach(row => {
     }
 
     // Check if the row is already processed
-    const exists = resultArray[clusterId].nodes.some(node => node["groupId-1"] === Number(groupId1) && node["groupId-2"] === Number(groupId2))
+    const exists = resultArray[clusterId].nodes.some(node => Number(node["groupId-1"]) === Number(groupId1) && Number(node["groupId-2"]) === Number(groupId2))
 
     if (!exists) {
         resultArray[clusterId].nodes.push({
@@ -37,4 +37,4 @@ rows.forEach(row => {
     }
 })
 
-console.log(resultArray)
+console.log(resultArray['3080'])
