@@ -144,6 +144,11 @@ fs.readFile('hadithGraphRawData.txt', 'utf8', (err, rawData) => {
     checkForDuplication(resultArray, '3')
 })
 
+function generateRandomLightColor() {
+    const minBrightness = 70; // Adjust this value to set the minimum brightness for the color
+    return `hsl(${Math.floor(Math.random() * 360)}, ${Math.floor(Math.random() * 50)}%, ${minBrightness + Math.floor(Math.random() * (100 - minBrightness))}%)`
+}
+
 function processData(data) {
     const resultArray = {}
 
@@ -182,6 +187,11 @@ function checkForDuplication(resultArray, clusterNumber) {
     const filteredNodes = Array.from(nodesMap.values())
     const filteredResult = { ...cluster, nodes: filteredNodes }
 
-    console.log(filteredResult.nodes.length)
+    // adding color to each node
+    filteredResult.nodes.forEach(node => {
+        node.color = generateRandomLightColor()
+    })
+
+    console.log(filteredResult.nodes)
     console.log(filteredResult.relations.length)
 }
