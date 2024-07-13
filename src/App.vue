@@ -1,41 +1,47 @@
 <script setup>
-import {onMounted} from "vue";
+import {onMounted, ref, watch} from "vue";
 import go from 'gojs'
-import {hadithData, relationHadithData} from './components/graph-data/graphData3080.js'
+import axios from "axios";
 
-onMounted(() => {
+const clusterNumber = ref('');
+const result = ref(null);
+const nodes = ref([]);
+const relations = ref([]);
+
+let myDiagram;
+
+// Initialize the GoJS Diagram
+function initDiagram() {
   const myTag = document.getElementById('myDiagramDiv')
   console.log(myTag)
 
-  const myDiagram = new go.Diagram("myDiagramDiv", {
+  myDiagram = new go.Diagram("myDiagramDiv", {
     "undoManager.isEnabled": true,
-    // layout: new go.LayeredDigraphLayout({direction: 90, layerSpacing: 35})
-  });  // enable undo & redo
+    layout: new go.LayeredDigraphLayout({
+      direction: 90,
+      layerSpacing: 150,
+    })
+  });
 
-  // also we can do like this for diagram layout
-  myDiagram.layout = new go.LayeredDigraphLayout({
-    direction: 90,
-    layerSpacing: 150,
-  })
-
-  // define a simple Node template
-  myDiagram.nodeTemplate = new go.Node("Auto")  // the Shape will automatically surround the TextBlock
-      // add a Shape and a TextBlock to this "Auto" Panel
-      .add(new go.Shape("RoundedRectangle",
-          {strokeWidth: 0, fill: "white"})  // no border; default fill is white
-          .bind("fill", "color"))  // Shape.fill is bound to Node.data.color
-      .add(new go.TextBlock({margin: 8, stroke: "#333", font: "bold 14pt sans-serif"})  // some room around the text
-          .bind("text", "hadith"))  // TextBlock.text is bound to Node.data.key
-  // but use the default Link template, by not setting Diagram.linkTemplate
-
-  // myDiagram.linkTemplate = new go.Link()
-  //         .add(
-  //             new go.Shape( { strokeWidth: 8 }),  // thick path
-  //             new go.Shape( { toArrow: "Standard" })
-  //         );
+  myDiagram.nodeTemplate = new go.Node("Auto")
+      .add(new go.Shape("Capsule", {strokeWidth: 0, fill: "white", width: 300, height: 130})
+          .bind("fill", "color"))
+      .add(new go.TextBlock({
+        margin: 8,
+        stroke: "#333",
+        font: "bold 14pt sans-serif",
+        width: 250,
+        height: 80,
+        maxLines: 3,
+        isMultiline: true,
+        text: "verticalAlignment: bottom",
+        // text: "alignment: Center",
+        textAlign: "center",
+        wrap: go.Wrap.Fit
+      })
+          .bind("text", "hadith"));
 
   myDiagram.linkTemplate = new go.Link({
-    // curve: go.Curve.Bezier,
     fromEndSegmentLength: 20,
     toEndSegmentLength: 20,
     relinkableFrom: true,
@@ -44,33 +50,64 @@ onMounted(() => {
     corner: 25
   })
       .add(new go.Shape({stroke: '#555555', strokeWidth: 4}))
-      .add(new go.Shape({toArrow: 'Standard', stroke: '#555555', strokeWidth: 5}))
+      .add(new go.Shape({toArrow: 'Standard', stroke: '#555555', strokeWidth: 5}));
 
-
-  // create the model data that will be represented by Nodes and Links
-  myDiagram.model = new go.GraphLinksModel(hadithData, relationHadithData)
+  myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value);
 
   const myOverview = new go.Overview("myOverviewDiv", {observed: myDiagram});
   console.log(myOverview)
 
-  const zoomSlider = new ZoomSlider(myDiagram)
+  new ZoomSlider(myDiagram)
 
-  document.getElementById("zoomToFit").addEventListener("click", () => myDiagram.commandHandler.zoomToFit())
+  document.getElementById("zoomToFit").addEventListener("click", () => myDiagram.commandHandler.zoomToFit());
   document.getElementById("centerRoot").addEventListener("click", () => {
     myDiagram.scale = 1;
     myDiagram.commandHandler.scrollToPart(myDiagram.findNodeForKey(1));
-  })
+  });
 
-  // ------------------------- zoomSlider (search)
   document.getElementById('myZoomSlider').addEventListener('input', function () {
-    // console.log('value ---------------', parseFloat(value))
     myDiagram.scale = parseFloat(this.value);
   });
-})
+}
+
+onMounted(() => {
+  initDiagram();
+});
+
+// Fetch data and update the diagram
+const fetchClusterData = async () => {
+  try {
+    const response = await axios.get(`http://localhost:5000/cluster/${clusterNumber.value}`);
+    result.value = response.data;
+    nodes.value = response.data.nodes;
+    relations.value = response.data.relations;
+  } catch (error) {
+    console.error('There was an error fetching the data:', error);
+  }
+};
+
+// Watch nodes and relations for changes and update the diagram model
+watch([nodes, relations], () => {
+  if (myDiagram) {
+    myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value);
+  }
+});
+
 </script>
 
 
 <template>
+  <!--  <div class="hadith">-->
+  <!--    <hadith-graph @relations="handleRelations" @nodes="handleNodes"/>-->
+  <!--  </div>-->
+  <div class="hadith">
+    <h1>Hadith Graph Data</h1>
+    <input v-model="clusterNumber" type="number" placeholder="Enter cluster number"/>
+    <button @click="fetchClusterData">Get Cluster Data</button>
+    <!--      <pre>{{ result }}</pre>-->
+  </div>
+
+
   <div class="parent-diagram">
     <div id="myDiagramDiv" style="width:1000px; height:80vh;"></div>
 
@@ -131,5 +168,12 @@ onMounted(() => {
 .button-zoom button:hover {
   background: #c597fc;
   transition: 0.2s ease;
+}
+
+.hadith {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+//justify-content: center; align-items: center;
 }
 </style>

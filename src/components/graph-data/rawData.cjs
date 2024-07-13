@@ -62,7 +62,7 @@ rows.forEach(row => {
         resultArray[clusterId].nodes.push({
             "key": groupId1,
             "hadith": hadith1
-        });
+        })
     }
 
     if (!existingNode2) {
@@ -118,4 +118,4 @@ function checkForDuplication(cluster) {
 checkForDuplication(3080)
 
 
-module.exports = {hadithData, relationHadithData, checkForDuplication}
+// module.exports = {hadithData, relationHadithData}
