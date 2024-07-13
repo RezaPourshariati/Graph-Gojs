@@ -87,7 +87,6 @@ onMounted(() => {
       <button id="centerRoot">Center on root</button>
     </p>
   </div>
-
 </template>
 
 
