@@ -24,17 +24,17 @@ function initDiagram() {
   });
 
   myDiagram.nodeTemplate = new go.Node("Auto")
-      .add(new go.Shape("Capsule", {strokeWidth: 0, fill: "white", width: 300, height: 130})
+      .add(new go.Shape("Capsule", {strokeWidth: 0, fill: "white", width: 440, height: 130})
           .bind("fill", "color"))
       .add(new go.TextBlock({
         margin: 8,
         stroke: "#333",
         font: "bold 14pt sans-serif",
-        width: 250,
+        width: 350,
         height: 80,
-        maxLines: 3,
+        maxLines: 5,
         isMultiline: true,
-        text: "verticalAlignment: bottom",
+        // text: "verticalAlignment: bottom",
         // text: "alignment: Center",
         textAlign: "center",
         wrap: go.Wrap.Fit
