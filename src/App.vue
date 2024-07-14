@@ -1,45 +1,45 @@
 <script setup>
-import {onMounted, ref, watch} from "vue";
+import { onMounted, ref, watch } from 'vue'
 import go from 'gojs'
-import axios from "axios";
+import axios from 'axios'
 
-const clusterNumber = ref('');
-const result = ref(null);
-const nodes = ref([]);
-const relations = ref([]);
+const clusterNumber = ref('')
+const result = ref(null)
+const nodes = ref([])
+const relations = ref([])
 
-let myDiagram;
+let myDiagram
 
 // Initialize the GoJS Diagram
 function initDiagram() {
   const myTag = document.getElementById('myDiagramDiv')
   console.log(myTag)
 
-  myDiagram = new go.Diagram("myDiagramDiv", {
-    "undoManager.isEnabled": true,
-    layout: new go.LayeredDigraphLayout({
+  myDiagram = new go.Diagram('myDiagramDiv', {
+    'undoManager.isEnabled': true,
+    'layout': new go.LayeredDigraphLayout({
       direction: 90,
       layerSpacing: 150,
-    })
-  });
+    }),
+  })
 
-  myDiagram.nodeTemplate = new go.Node("Auto")
-      .add(new go.Shape("RoundedRectangle", {strokeWidth: 0, fill: "white", width: 440, height: 130})
-          .bind("fill", "color"))
-      .add(new go.TextBlock({
-        margin: 8,
-        stroke: "#333",
-        font: "bold 14pt sans-serif",
-        width: 350,
-        height: 80,
-        maxLines: 5,
-        isMultiline: true,
-        // text: "verticalAlignment: center",
-        // text: "alignment: Center",
-        textAlign: "center",
-        wrap: go.Wrap.Fit
-      })
-          .bind("text", "hadith"))
+  myDiagram.nodeTemplate = new go.Node('Auto')
+    .add(new go.Shape('RoundedRectangle', { strokeWidth: 0, fill: 'white', width: 440, height: 130 })
+      .bind('fill', 'color'))
+    .add(new go.TextBlock({
+      margin: 8,
+      stroke: '#333',
+      font: 'bold 14pt sans-serif',
+      width: 350,
+      height: 80,
+      maxLines: 5,
+      isMultiline: true,
+      // text: "verticalAlignment: center",
+      // text: "alignment: Center",
+      textAlign: 'center',
+      wrap: go.Wrap.Fit,
+    })
+      .bind('text', 'hadith'))
 
   myDiagram.linkTemplate = new go.Link({
     fromEndSegmentLength: 20,
@@ -47,19 +47,19 @@ function initDiagram() {
     relinkableFrom: true,
     relinkableTo: true,
     routing: go.Routing.Orthogonal,
-    corner: 25
+    corner: 25,
   })
-      .add(new go.Shape({stroke: '#555555', strokeWidth: 4}))
-      .add(new go.Shape({toArrow: 'Standard', stroke: '#555555', strokeWidth: 5}))
+    .add(new go.Shape({ stroke: '#555555', strokeWidth: 4 }))
+    .add(new go.Shape({ toArrow: 'Standard', stroke: '#555555', strokeWidth: 5 }))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
-  new go.Overview("myOverviewDiv", {observed: myDiagram})
+  new go.Overview('myOverviewDiv', { observed: myDiagram })
   new ZoomSlider(myDiagram)
 
-  document.getElementById("zoomToFit").addEventListener("click", () => myDiagram.commandHandler.zoomToFit());
-  document.getElementById("centerRoot").addEventListener("click", () => {
-    myDiagram.scale = 1;
+  document.getElementById('zoomToFit').addEventListener('click', () => myDiagram.commandHandler.zoomToFit())
+  document.getElementById('centerRoot').addEventListener('click', () => {
+    myDiagram.scale = 1
     myDiagram.commandHandler.scrollToPart(myDiagram.findNodeForKey(1))
   })
 
@@ -73,67 +73,77 @@ onMounted(() => {
 })
 
 // Fetch data and update the diagram
-const fetchClusterData = async () => {
+async function fetchClusterData() {
   try {
     const response = await axios.get(`http://172.16.8.51:5000/cluster/${clusterNumber.value}`)
-    result.value = response.data;
-    nodes.value = response.data.nodes;
-    relations.value = response.data.relations;
-  } catch (error) {
+    result.value = response.data
+    nodes.value = response.data.nodes
+    relations.value = response.data.relations
+  }
+  catch (error) {
     console.error('There was an error fetching the data:', error)
   }
 }
 
 // Watch nodes and relations for changes and update the diagram model
 watch([nodes, relations], () => {
-  if (myDiagram) {
+  if (myDiagram)
     myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
-  }
 })
 </script>
 
-
 <template>
-  <!--  <div class="hadith">-->
-  <!--    <hadith-graph @relations="handleRelations" @nodes="handleNodes"/>-->
-  <!--  </div>-->
-  <div class="hadith">
+  <!--  <div class="hadith"> -->
+  <!--    <hadith-graph @relations="handleRelations" @nodes="handleNodes"/> -->
+  <!--  </div> -->
+  <div class="hadith-graph">
     <h1>Hadith Graph Data</h1>
-    <input v-model="clusterNumber" class="input-text" type="number" placeholder="Enter cluster number"/>
-    <button @click="fetchClusterData">Get Cluster Data</button>
-    <!--      <pre>{{ result }}</pre>-->
+    <input
+      v-model="clusterNumber"
+      class="cluster-number"
+      type="number"
+      placeholder="Enter cluster number"
+    >
+    <button
+      class="fetch-button"
+      @click="fetchClusterData"
+    >
+      Get Cluster Data
+    </button>
+    <!--      <pre>{{ result }}</pre> -->
   </div>
 
-
   <div class="parent-diagram">
-    <div id="myDiagramDiv" style="width:1000px; height:80vh;"></div>
+    <div
+      id="myDiagramDiv"
+      style="width:1000px; height:80vh;"
+    />
 
     <!--  Overview map  -->
-    <div id="myOverviewDiv" style="width:150px; height:150px; border: 5px solid orangered"></div>
+    <div
+      id="myOverviewDiv"
+      style="width:150px; height:150px; border: 5px solid orangered"
+    />
     <!--  zoom slider (search)  -->
-    <!--    <input type="range" id="myZoomSlider" min="0.1" max="2" step="0.1" value="1"/>-->
+    <!--    <input type="range" id="myZoomSlider" min="0.1" max="2" step="0.1" value="1"/> -->
 
     <!--  zoom slider  -->
-    <!--    <div id="zoomSlider" style="width:150px; height:150px;"></div>-->
+    <!--    <div id="zoomSlider" style="width:150px; height:150px;"></div> -->
 
     <p class="button-zoom">
-      <button id="zoomToFit">Zoom to Fit</button>
-      <button id="centerRoot">Center on root</button>
+      <button id="zoomToFit">
+        Zoom to Fit
+      </button>
+      <button id="centerRoot">
+        Center on root
+      </button>
     </p>
   </div>
 </template>
 
-
 <style scoped>
 .parent-diagram {
   position: relative;
-}
-
-#myZoomSlider {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-  z-index: 99;
 }
 
 #myDiagramDiv {
@@ -167,14 +177,38 @@ watch([nodes, relations], () => {
   transition: 0.2s ease;
 }
 
-.hadith {
+.hadith-graph {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 5px;
-//justify-content: center; align-items: center;
+  margin-bottom: 1rem;
 }
 
-.input-text {
+.hadith-graph h1 {
+  font-size: 40px;
+  color: #22518c;
+}
+
+.fetch-button {
+  font-family: "JetBrains Mono Light", ui-monospace;
+  font-size: 1rem;
+  background: #dfadfc;
+  font-weight: bold;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.fetch-button:hover {
+  background: #c597fc;
+  transition: 0.2s ease;
+}
+
+.cluster-number {
   padding: 7px;
+  border: 2px solid #3b82f6;
+  border-radius: 6px;
+  outline: none;
 }
 </style>
