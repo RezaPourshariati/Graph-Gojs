@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import go from 'gojs'
+import go, { TextOverflow, Wrap } from 'gojs'
 import axios from 'axios'
 
 const clusterNumber = ref('')
@@ -24,22 +24,50 @@ function initDiagram() {
   })
 
   myDiagram.nodeTemplate = new go.Node('Auto')
-    .add(new go.Shape('RoundedRectangle', { strokeWidth: 0, fill: 'white', width: 440, height: 130 })
-      .bind('fill', 'color'))
-    .add(new go.TextBlock({
-      margin: 8,
-      stroke: '#333',
-      font: 'bold 14pt sans-serif',
-      width: 350,
-      height: 80,
-      maxLines: 5,
-      isMultiline: true,
-      // text: "verticalAlignment: center",
-      // text: "alignment: Center",
-      textAlign: 'center',
-      wrap: go.Wrap.Fit,
-    })
-      .bind('text', 'hadith'))
+      .add(new go.Shape('RoundedRectangle', { strokeWidth: 2, stroke: 'orange', fill: 'white', alignment: go.Spot.Center })
+          .bind('fill', 'color')
+          .bind('width', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 2.5, 450), 250))  // adjust the multiplier as needed
+          .bind('height', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 1.5, 150), 85)))  // adjust the multiplier and max height as needed
+      .add(new go.Panel('Vertical')
+          .add(new go.TextBlock({
+            margin: 8,
+            stroke: '#333',
+            font: 'bold 14pt sans-serif',
+            textAlign: 'center',
+            maxSize: new go.Size(400, 100),
+            wrap: Wrap.Fit,
+          })
+              .bind('text', 'shortText')
+              .bind('width', 'shortText', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))  // adjust the multiplier as needed
+              .bind('height', 'shortText', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
+              .bind('maxLines', 'shortText', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))  // adjust the multiplier and max height as needed
+          .add(new go.TextBlock({
+            margin: 8,
+            stroke: '#333',
+            font: 'bold 14pt sans-serif',
+            textAlign: 'center',
+            visible: false,
+            wrap: Wrap.Fit,
+          })
+              .bind('text', 'fullText')
+              .bind('visible', 'showFullText')
+              .bind('width', 'fullText', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))
+              .bind('height', 'fullText', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
+              .bind('maxLines', 'fullText', (hadith) => Math.max(Math.floor(hadith.length / 20), 2))
+          )
+          .add(new go.TextBlock({
+            margin: 8,
+            stroke: 'blue',
+            font: 'bold 14pt sans-serif',
+            textAlign: 'center',
+            isUnderline: true,
+            click: (e, obj) => toggleReadMore(obj.part.data),
+          })
+              .bind('text', 'readMoreText')
+              .bind('visible', 'showReadMore')
+              .bind('width', 'readMoreText', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))  // adjust the multiplier as needed
+              .bind('height', 'readMoreText', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
+              .bind('maxLines', 'readMoreText', (hadith) => Math.max(Math.floor(hadith.length / 20), 2))))
 
   myDiagram.linkTemplate = new go.Link({
     fromEndSegmentLength: 20,
@@ -49,8 +77,8 @@ function initDiagram() {
     routing: go.Routing.Orthogonal,
     corner: 25,
   })
-    .add(new go.Shape({ stroke: '#555555', strokeWidth: 4 }))
-    .add(new go.Shape({ toArrow: 'Standard', stroke: '#555555', strokeWidth: 5 }))
+      .add(new go.Shape({ stroke: '#555555', strokeWidth: 4 }))
+      .add(new go.Shape({ toArrow: 'Standard', stroke: '#555555', strokeWidth: 5 }))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
@@ -68,6 +96,17 @@ function initDiagram() {
   // })
 }
 
+function toggleReadMore(data) {
+  const node = myDiagram.findNodeForData(data)
+  if (node) {
+    myDiagram.model.commit((m) => {
+      m.set(data, 'showFullText', !data.showFullText)
+      // m.set(data, 'showShortText', data.showFullText)
+      m.set(data, 'showReadMore', !data.showFullText)
+    })
+  }
+}
+
 onMounted(() => {
   initDiagram()
 })
@@ -75,9 +114,19 @@ onMounted(() => {
 // Fetch data and update the diagram
 async function fetchClusterData() {
   try {
-    const response = await axios.get(`http://172.16.8.51:5000/cluster/${clusterNumber.value}`)
+    const response = await axios.get(`http://localhost:5000/cluster/${clusterNumber.value}`)
     result.value = response.data
-    nodes.value = response.data.nodes
+    nodes.value = response.data.nodes.map(node => {
+      const maxLength = 200  // Adjust as needed
+      return {
+        ...node,
+        shortText: node.hadith.length > maxLength ? node.hadith.slice(0, maxLength) : node.hadith,
+        fullText: node.hadith,
+        showFullText: false,
+        showReadMore: node.hadith.length > maxLength,
+        readMoreText: 'Read more'
+      }
+    })
     relations.value = response.data.relations
   }
   catch (error) {
@@ -91,6 +140,7 @@ watch([nodes, relations], () => {
     myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 })
 </script>
+
 
 <template>
   <!--  <div class="hadith"> -->
