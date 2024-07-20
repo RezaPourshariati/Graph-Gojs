@@ -143,88 +143,58 @@ watch([nodes, relations], () => {
 
 
 <template>
-  <!--  <div class="hadith"> -->
-  <!--    <hadith-graph @relations="handleRelations" @nodes="handleNodes"/> -->
-  <!--  </div> -->
   <div class="hadith-graph">
     <h1>Hadith Graph Data</h1>
-    <input
-      v-model="clusterNumber"
-      class="cluster-number"
-      type="number"
-      placeholder="Enter cluster number"
-    >
-    <button
-      class="fetch-button"
-      @click="fetchClusterData"
-    >
-      Get Cluster Data
-    </button>
-    <!--      <pre>{{ result }}</pre> -->
+    <div class="graph-control">
+      <div class="zoom-buttons">
+        <button id="zoomToFit">
+          Zoom to Fit
+        </button>
+        <button id="centerRoot">
+          Center on root
+        </button>
+      </div>
+
+      <div class="input-cluster">
+        <input
+            v-model="clusterNumber"
+            class="cluster-number"
+            type="number"
+            placeholder="Enter cluster number"
+        >
+        <button
+            class="fetch-button"
+            @click="fetchClusterData"
+        >
+          Get Cluster Data
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="parent-diagram">
     <div
-      id="myDiagramDiv"
-      style="width:1000px; height:80vh;"
+        id="myDiagramDiv"
+        style="width:1100px; height:80vh;"
     />
-
     <!--  Overview map  -->
     <div
-      id="myOverviewDiv"
-      style="width:150px; height:150px; border: 5px solid orangered"
+        id="myOverviewDiv"
+        style="width:180px; height:150px; border: 3px solid mediumpurple"
     />
     <!--  zoom slider (search)  -->
     <!--    <input type="range" id="myZoomSlider" min="0.1" max="2" step="0.1" value="1"/> -->
 
     <!--  zoom slider  -->
     <!--    <div id="zoomSlider" style="width:150px; height:150px;"></div> -->
-
-    <p class="button-zoom">
-      <button id="zoomToFit">
-        Zoom to Fit
-      </button>
-      <button id="centerRoot">
-        Center on root
-      </button>
-    </p>
   </div>
 </template>
 
 <style scoped>
 .parent-diagram {
   position: relative;
-}
-
-#myDiagramDiv {
-  border: 4px solid green;
+  max-width: 1100px;
   margin: 0 auto;
-}
-
-#myOverviewDiv {
-  margin: 0 auto;
-}
-
-.button-zoom {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  margin-bottom: 3rem;
-}
-
-.button-zoom button {
-  font-family: "JetBrains Mono Light", ui-monospace;
-  font-size: 1rem;
-  background: #dfadfc;
-  font-weight: bold;
-  border: none;
-  padding: 1.2rem;
-  border-radius: 5px;
-}
-
-.button-zoom button:hover {
-  background: #c597fc;
-  transition: 0.2s ease;
 }
 
 .hadith-graph {
@@ -235,19 +205,72 @@ watch([nodes, relations], () => {
   margin-bottom: 1rem;
 }
 
-.hadith-graph h1 {
-  font-size: 40px;
-  color: #22518c;
+.graph-control {
+  width: 800px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.input-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .fetch-button {
   font-family: "JetBrains Mono Light", ui-monospace;
   font-size: 1rem;
+  color: #450a0a;
   background: #dfadfc;
   font-weight: bold;
   border: none;
-  padding: 10px;
+  padding: 8px 10px;
   border-radius: 5px;
+}
+
+#myDiagramDiv {
+  border: 3px solid green;
+  border-radius: 6px;
+  margin: 0 auto;
+}
+
+#myOverviewDiv {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0 auto;
+  background: #eef3ff;
+  border-radius: 6px;;
+  z-index: 4;
+}
+
+.zoom-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.zoom-buttons button {
+  font-family: "JetBrains Mono Light", ui-monospace;
+  font-size: 1rem;
+  color: #450a0a;
+  background: #dfadfc;
+  font-weight: bold;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 5px;
+}
+
+.zoom-buttons button:hover {
+  background: #c597fc;
+  transition: 0.2s ease;
+}
+
+.hadith-graph h1 {
+  font-size: 40px;
+  color: #22518c;
 }
 
 .fetch-button:hover {

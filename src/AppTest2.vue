@@ -42,25 +42,32 @@ function initDiagram() {
   //     .bind('text', 'hadith'))
 
   myDiagram.nodeTemplate = new go.Node('Auto')
-      .add(new go.Shape('RoundedRectangle', { strokeWidth: 2, stroke: 'orange', fill: 'white', alignment: go.Spot.Center })
-          .bind('fill', 'color')
-          .bind('width', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 2.5, 450), 250))  // adjust the multiplier as needed
-          .bind('height', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 1.5, 150), 85)))  // adjust the multiplier and max height as needed
+      .add(new go.Shape('RoundedRectangle', { strokeWidth: 0, fill: 'white', stroke: 'orange' })
+          .bind(new go.Binding('width', 'text', function(text) {
+            // Calculate the width based on the text length
+            const textLength = text ? text.length : 0;
+            const minWidth = 80;  // Minimum width for the node
+            return Math.max(minWidth, textLength * 5); // Adjust based on your preference
+          })).bind('fill', 'color')
+          .bind(new go.Binding('height', 'text', function(text) {
+            // Calculate the height based on the text length
+            const lineHeight = 20; // Assuming each line of text occupies 20 units of height
+            const numOfLines = text ? Math.ceil(text.length / 20) : 1;
+            return Math.max(50, numOfLines * lineHeight); // Adjust based on your preference
+          }))
+      )
       .add(new go.TextBlock({
         margin: 8,
         stroke: '#333',
         font: 'bold 14pt sans-serif',
-        // maxLines: 5,
+        width: 350,
+        MaxWidth: 400,
+        maxLines: 5,
         isMultiline: true,
         textAlign: 'center',
-        maxSize: new go.Size(400, 100),
-        // overflow: TextOverflow.Clip,
-        wrap: Wrap.Fit,
+        // wrap: go.WrapFit
       })
-          .bind('text', 'hadith')
-          .bind('width', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))  // adjust the multiplier as needed
-          .bind('height', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
-          .bind('maxLines', 'hadith', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))  // adjust the multiplier and max height as needed
+          .bind('text', 'hadith'))
   // .add(
   //     new go.Panel("Horizontal")
   //         .add(
