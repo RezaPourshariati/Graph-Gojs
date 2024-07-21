@@ -30,56 +30,58 @@ function initDiagram() {
     // resizeObjectName: 'SCROLLER',
     // portSpreading: go.PortSpreading.None,
   })
-    .add(new go.Panel('Position', { background: 'transparent' })
+    .add(new go.Panel('Vertical', { background: 'transparent' })
       .add(
-        new go.TextBlock('hello world', { background: 'transparent', width: 350, MaxWidth: 400, alignment: go.Spot.Right }).bind('hadith'),
-        new go.TextBlock('hello world', { background: 'transparent', width: 350, MaxWidth: 400, alignment: go.Spot.Right }),
-      )).bind('')
+        new go.TextBlock('hello world', { background: 'yellow', alignment: go.Spot.Left }),
+      ).add(new go.Panel('Position', { background: 'gray' })
+        .add(
+          new go.TextBlock('hello world', { background: 'skyblue', width: 350, MaxWidth: 400, alignment: go.Spot.Right, }).bind('text', 'hadith'),
+        )))
 
-    // .add(new go.Shape('RoundedRectangle', { strokeWidth: 2, stroke: 'orange', fill: 'white' })
-    //   .bind(new go.Binding('width', 'text', (text) => {
-    //   // Calculate the width based on the text length
-    //     const textLength = text ? text.length : 0
-    //     const minWidth = 80 // Minimum width for the node
-    //     return Math.max(minWidth, textLength * 5) // Adjust based on your preference
-    //   })).bind('fill', 'color')
-    //   .bind(new go.Binding('height', 'text', (text) => {
-    //   // Calculate the height based on the text length
-    //     const lineHeight = 20 // Assuming each line of text occupies 20 units of height
-    //     const numOfLines = text ? Math.ceil(text.length / 20) : 1
-    //     return Math.max(50, numOfLines * lineHeight) // Adjust based on your preference
-    //   })),
-    // )
-    // .add(new go.TextBlock({
-    //   margin: 8,
-    //   stroke: '#333',
-    //   font: 'bold 14pt sans-serif',
-    //   width: 350,
-    //   MaxWidth: 400,
-    //   maxLines: 5,
-    //   isMultiline: true,
-    //   textAlign: 'center',
-    // // wrap: go.WrapFit
-    // })
-    //   .bind('text', 'hadith'))
-    .add(new go.TextBlock('hadithId link', {
-      margin: 8,
-      stroke: '#333',
-      font: 'bold 14pt sans-serif',
-      isMultiline: true,
-      textAlign: 'center',
-      maxSize: new go.Size(400, 100),
-      cursor: 'pointer',
-      // wrap: Wrap.Fit,
-      click(e, obj) { // add click event handler
-        const node = obj.part
-        if (node) {
-          const nodeId = node.data.hadithId // assuming 'key' is the id of the node
-          window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank')
-        }
-      },
-    })
-      .bind('text', 'hadithId'))
+  // .add(new go.Shape('RoundedRectangle', { strokeWidth: 2, stroke: 'orange', fill: 'white' })
+  //   .bind(new go.Binding('width', 'text', (text) => {
+  //   // Calculate the width based on the text length
+  //     const textLength = text ? text.length : 0
+  //     const minWidth = 80 // Minimum width for the node
+  //     return Math.max(minWidth, textLength * 5) // Adjust based on your preference
+  //   })).bind('fill', 'color')
+  //   .bind(new go.Binding('height', 'text', (text) => {
+  //   // Calculate the height based on the text length
+  //     const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+  //     const numOfLines = text ? Math.ceil(text.length / 20) : 1
+  //     return Math.max(50, numOfLines * lineHeight) // Adjust based on your preference
+  //   })),
+  // )
+  // .add(new go.TextBlock({
+  //   margin: 8,
+  //   stroke: '#333',
+  //   font: 'bold 14pt sans-serif',
+  //   width: 350,
+  //   MaxWidth: 400,
+  //   maxLines: 5,
+  //   isMultiline: true,
+  //   textAlign: 'center',
+  // // wrap: go.WrapFit
+  // })
+  //   .bind('text', 'hadith'))
+  // .add(new go.TextBlock('hadithId link', {
+  //   margin: 8,
+  //   stroke: '#333',
+  //   font: 'bold 14pt sans-serif',
+  //   isMultiline: true,
+  //   textAlign: 'center',
+  //   maxSize: new go.Size(400, 100),
+  //   cursor: 'pointer',
+  //   // wrap: Wrap.Fit,
+  //   click(e, obj) { // add click event handler
+  //     const node = obj.part
+  //     if (node) {
+  //       const nodeId = node.data.hadithId // assuming 'key' is the id of the node
+  //       window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank')
+  //     }
+  //   },
+  // })
+  //   .bind('text', 'hadithId'))
   // ---------------------------------------------------------------------------------------------- new codes
   // .add(new go.Binding('toolTip', 'hadith', function(hadith, node) {
   //   return go.GraphObject.make(go.Adornment, 'Auto',
