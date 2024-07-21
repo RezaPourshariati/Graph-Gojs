@@ -23,23 +23,6 @@ function initDiagram() {
     }),
   })
 
-  // myDiagram.nodeTemplate = new go.Node('Auto')
-  //   .add(new go.Shape('RoundedRectangle', { strokeWidth: 0, fill: 'white', width: 440, height: 130 })
-  //     .bind('fill', 'color'))
-  //   .add(new go.TextBlock({
-  //     margin: 8,
-  //     stroke: '#333',
-  //     font: 'bold 14pt sans-serif',
-  //     width: 350,
-  //     height: 80,
-  //     maxLines: 5,
-  //     isMultiline: true,
-  //     // text: "verticalAlignment: center",
-  //     // text: "alignment: Center",
-  //     textAlign: 'center',
-  //     wrap: go.Wrap.Fit,
-  //   })
-  //     .bind('text', 'hadith'))
 
   myDiagram.nodeTemplate = new go.Node('Auto')
       .add(new go.Shape('RoundedRectangle', { strokeWidth: 0, fill: 'white', stroke: 'orange' })
@@ -54,29 +37,20 @@ function initDiagram() {
             const lineHeight = 20; // Assuming each line of text occupies 20 units of height
             const numOfLines = text ? Math.ceil(text.length / 20) : 1;
             return Math.max(50, numOfLines * lineHeight); // Adjust based on your preference
-          }))
+          })),
+          new go.TextBlock({
+            margin: 8,
+            stroke: '#333',
+            font: 'bold 14pt sans-serif',
+            width: 350,
+            MaxWidth: 400,
+            maxLines: 5,
+            isMultiline: true,
+            textAlign: 'center',
+            // wrap: go.WrapFit
+          }).bind('text', 'hadith')
       )
-      .add(new go.TextBlock({
-        margin: 8,
-        stroke: '#333',
-        font: 'bold 14pt sans-serif',
-        width: 350,
-        MaxWidth: 400,
-        maxLines: 5,
-        isMultiline: true,
-        textAlign: 'center',
-        // wrap: go.WrapFit
-      })
-          .bind('text', 'hadith'))
-  // .add(
-  //     new go.Panel("Horizontal")
-  //         .add(
-  //             go.GraphObject.build("SubGraphExpanderButton",
-  //                 { margin: new go.Margin(0, 3, 5, 0) }),
-  //             new go.TextBlock("Group")
-  //         ),
-  //     new go.Placeholder()
-  // )
+
 
   myDiagram.linkTemplate = new go.Link({
     fromEndSegmentLength: 20,

@@ -61,6 +61,28 @@ function initDiagram() {
           .bind('width', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))  // adjust the multiplier as needed
           .bind('height', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
           .bind('maxLines', 'hadith', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))  // adjust the multiplier and max height as needed
+      // new code for link
+      .add(new go.TextBlock("id",{
+        margin: 8,
+        stroke: '#333',
+        font: 'bold 14pt sans-serif',
+        isMultiline: true,
+        textAlign: 'center',
+        maxSize: new go.Size(400, 100),
+        cursor: 'pointer',
+        wrap: Wrap.Fit,
+        click: function(e, obj) {  // add click event handler
+          const node = obj.part;
+          if (node) {
+            const nodeId = node.data.hadithId;  // assuming 'key' is the id of the node
+            window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank');
+          }
+        }
+      })
+          .bind('text', 'hadithId'))
+          // .bind('width', 'hadithId', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))
+          // .bind('height', 'hadithId', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
+          // .bind('maxLines', 'hadithId', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))
   // .add(
   //     new go.Panel("Horizontal")
   //         .add(
@@ -72,15 +94,15 @@ function initDiagram() {
   // )
 
   myDiagram.linkTemplate = new go.Link({
-    fromEndSegmentLength: 20,
-    toEndSegmentLength: 20,
+    fromEndSegmentLength: 10,
+    toEndSegmentLength: 100,
     relinkableFrom: true,
     relinkableTo: true,
     routing: go.Routing.Orthogonal,
-    corner: 25,
+    corner: 45,
   })
-      .add(new go.Shape({ stroke: '#555555', strokeWidth: 4 }))
-      .add(new go.Shape({ toArrow: 'Standard', stroke: '#555555', strokeWidth: 5 }))
+      .add(new go.Shape({ strokeWidth: 2 }).bind('stroke', 'color'))
+      .add(new go.Shape({ toArrow: 'Standard', strokeWidth: 2 }))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 

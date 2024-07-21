@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import {onMounted, ref, watch} from 'vue'
 import go from 'gojs'
 
 import axios from 'axios'
@@ -30,13 +30,22 @@ function initDiagram() {
     // resizeObjectName: 'SCROLLER',
     // portSpreading: go.PortSpreading.None,
   })
-    .add(new go.Panel('Vertical', { background: 'transparent' })
-      .add(
-        new go.TextBlock('hello world', { background: 'yellow', alignment: go.Spot.Left }),
-      ).add(new go.Panel('Position', { background: 'gray' })
-        .add(
-          new go.TextBlock('hello world', { background: 'skyblue', width: 350, MaxWidth: 400, alignment: go.Spot.Right, }).bind('text', 'hadith'),
-        )))
+      .add(new go.Shape('RoundedRectangle', {
+            // fill: new go.Brush("Linear", { 0: "red", 1: "green" }),
+            stroke: "orange",
+            strokeWidth: 2
+          }),
+          new go.Panel('Vertical', {background: 'transparent'})
+              .add(new go.TextBlock('hello world', {background: 'yellow', alignment: go.Spot.Left}))
+              .add(new go.Panel('Position', {background: 'gray'})
+                  .add(new go.TextBlock('hello world', {
+                        // position: new go.Point(100, -400),
+                        background: 'skyblue',
+                        width: 350,
+                        MaxWidth: 400,
+                        alignment: go.Spot.Right,
+                      }).bind('text', 'hadith'),
+                  )))
 
   // .add(new go.Shape('RoundedRectangle', { strokeWidth: 2, stroke: 'orange', fill: 'white' })
   //   .bind(new go.Binding('width', 'text', (text) => {
@@ -103,12 +112,12 @@ function initDiagram() {
     // curve: go.Curve.JumpGap,
     // curviness: 100,
   })
-    .add(new go.Shape({ strokeWidth: 2 }).bind('stroke', 'color'))
-    .add(new go.Shape({ toArrow: 'Standard', strokeWidth: 2 }).bind('stroke', 'color').bind('fill', 'color'))
+      .add(new go.Shape({strokeWidth: 2}).bind('stroke', 'color'))
+      .add(new go.Shape({toArrow: 'Standard', strokeWidth: 2}).bind('stroke', 'color').bind('fill', 'color'))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
-  const Overview = new go.Overview('myOverviewDiv', { observed: myDiagram })
+  const Overview = new go.Overview('myOverviewDiv', {observed: myDiagram})
   const zoomSlider = new ZoomSlider(myDiagram)
 
   document.getElementById('zoomToFit').addEventListener('click', () => myDiagram.commandHandler.zoomToFit())
@@ -133,8 +142,7 @@ async function fetchClusterData() {
     result.value = response.data
     nodes.value = response.data.nodes
     relations.value = response.data.relations
-  }
-  catch (error) {
+  } catch (error) {
     console.error('There was an error fetching the data:', error)
   }
 }
@@ -161,14 +169,14 @@ watch([nodes, relations], () => {
 
       <div class="input-cluster">
         <input
-          v-model="clusterNumber"
-          class="cluster-number"
-          type="number"
-          placeholder="Enter cluster number"
+            v-model="clusterNumber"
+            class="cluster-number"
+            type="number"
+            placeholder="Enter cluster number"
         >
         <button
-          class="fetch-button"
-          @click="fetchClusterData"
+            class="fetch-button"
+            @click="fetchClusterData"
         >
           Get Cluster Data
         </button>
@@ -178,12 +186,12 @@ watch([nodes, relations], () => {
 
   <div class="parent-diagram">
     <div
-      id="myDiagramDiv"
+        id="myDiagramDiv"
     />
     <!--  Overview map  -->
     <div
-      id="myOverviewDiv"
-      style="width:180px; height:150px; border: 3px solid mediumpurple"
+        id="myOverviewDiv"
+        style="width:180px; height:150px; border: 3px solid mediumpurple"
     />
     <!--  zoom slider (search)  -->
     <!--    <input type="range" id="myZoomSlider" min="0.1" max="2" step="0.1" value="1"/> -->
