@@ -124,7 +124,7 @@ watch([nodes, relations], () => {
 
 <template>
   <div class="hadith-graph">
-    <h1>Hadith Graph Data</h1>
+    <!--    <h1>Hadith Graph Data</h1> -->
     <div class="graph-control">
       <div class="zoom-buttons">
         <button id="zoomToFit">
@@ -155,7 +155,6 @@ watch([nodes, relations], () => {
   <div class="parent-diagram">
     <div
         id="myDiagramDiv"
-        style="width:1100px; height:80vh;"
     />
     <!--  Overview map  -->
     <div
@@ -173,16 +172,16 @@ watch([nodes, relations], () => {
 <style scoped>
 .parent-diagram {
   position: relative;
-  max-width: 1100px;
+  height: calc(100vh - 115px);
+  width: calc(100vw - 8%);
   margin: 0 auto;
 }
 
 .hadith-graph {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 5px;
-  margin-bottom: 1rem;
+  margin: 1.5rem auto;
 }
 
 .graph-control {
@@ -212,6 +211,8 @@ watch([nodes, relations], () => {
 
 #myDiagramDiv {
   border: 3px solid green;
+  height: 100%;
+  width: 100%;
   border-radius: 6px;
   margin: 0 auto;
 }
@@ -221,7 +222,6 @@ watch([nodes, relations], () => {
   top: 0;
   left: 0;
   margin: 0 auto;
-  background: #eef3ff;
   border-radius: 6px;;
   z-index: 4;
 }
