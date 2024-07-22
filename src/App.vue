@@ -1,6 +1,6 @@
 <script setup>
 import {onMounted, ref, watch} from 'vue'
-import go, {TextOverflow, Wrap} from 'gojs'
+import go from 'gojs'
 import axios from 'axios'
 
 const clusterNumber = ref('')
@@ -23,7 +23,12 @@ function initDiagram() {
     }),
   })
 
-  myDiagram.nodeTemplate = new go.Node('Auto')
+  myDiagram.nodeTemplate = new go.Node('Auto', {
+    // selectionObjectName: 'SCROLLER',
+    // resizable: true,
+    // resizeObjectName: 'SCROLLER',
+    // portSpreading: go.PortSpreading.None,
+  })
       .add(
           new go.Shape('RoundedRectangle', {
             strokeWidth: 2,
@@ -31,61 +36,61 @@ function initDiagram() {
             fill: 'transparent',
             // background: 'transparent', didn't work
           })
-              .bind(new go.Binding('width', 'text', function (text) {
-                const textLength = text ? text.length : 0;
-                const minWidth = 80;  // Minimum width for the node
-                return Math.max(minWidth, textLength * 5); // Adjust based on your preference
+              .bind(new go.Binding('width', 'text', (text) => {
+                const textLength = text ? text.length : 0
+                const minWidth = 80 // Minimum width for the node
+                return Math.max(minWidth, textLength * 5) // we can adjust it
               }))
               // .bind('fill', 'color')
-              .bind(new go.Binding('height', 'text', function (text) {
-                const lineHeight = 20; // Assuming each line of text occupies 20 units of height
-                const numOfLines = text ? Math.ceil(text.length / 20) : 1;
-                return Math.max(50, numOfLines * lineHeight); // Adjust based on your preference
+              .bind(new go.Binding('height', 'text', (text) => {
+                const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+                const numOfLines = text ? Math.ceil(text.length / 20) : 1
+                return Math.max(50, numOfLines * lineHeight) // we can adjust it
               })),
           new go.Panel('Vertical', {
             background: 'transparent',
-            padding: 8,
+            // padding: 8,
           })
-              .add(new go.TextBlock("HadithId Link", {
-                    margin: 8,
-                    background: 'yellow',
-                    alignment: go.Spot.Left,
-                    stroke: '#333',
-                    font: 'bold 14pt sans-serif',
-                    isMultiline: true,
-                    textAlign: 'center',
-                    maxSize: new go.Size(400, 100),
-                    cursor: 'pointer',
-                    wrap: go.TextBlock.WrapFit,  // Wrap should be applied correctly
-                    click: function (e, obj) {  // Add click event handler
-                      const node = obj.part;
-                      if (node) {
-                        const nodeId = node.data.hadithId;  // Assuming 'hadithId' is the id of the node
-                        window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank');
-                      }
-                    }
-                  })
-                      .bind('text', 'hadithId')
-              ) // Ending the last add
-              .add(new go.Panel('Auto', {background: 'transparent', padding: 5})
+              .add(new go.TextBlock('HadithId Link', {
+                margin: 8,
+                // background: 'yellow',
+                alignment: go.Spot.Left,
+                stroke: '#ff006e',
+                font: 'bold 12pt JetBrains Mono Light',
+                isMultiline: true,
+                textAlign: 'center',
+                maxSize: new go.Size(400, 100), // Check
+                cursor: 'pointer',
+                wrap: go.TextBlock.WrapFit, // Check
+                click(e, obj) { // click event handler
+                  const node = obj.part
+                  if (node) {
+                    const nodeId = node.data.hadithId // Assuming 'hadithId' is the id of the node
+                    window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank')
+                  }
+                },
+              })
+                  .bind('text', 'hadithId'))
+              // Ending the last add
+              .add(new go.Panel('Auto', {background: 'transparent', margin: 1})
                   .add(new go.Shape('RoundedRectangle', {
                     strokeWidth: 2,
                     stroke: 'orange',
                     fill: 'transparent',
                     width: 350,
-                    // maxWidth: 400,
-                    // background: 'transparent', didn't work
+                    maxWidth: 400,
+                    // background: 'transparent', // didn't work
                   })
-                      .bind(new go.Binding('width', 'text', function (text) {
-                        const textLength = text ? text.length : 0;
-                        const minWidth = 80;  // Minimum width for the node
-                        return Math.max(minWidth, textLength * 5); // Adjust based on your preference
+                      .bind(new go.Binding('width', 'text', (text) => {
+                        const textLength = text ? text.length : 0
+                        const minWidth = 80 // Minimum width for the node
+                        return Math.max(minWidth, textLength * 5) // we can adjust it
                       }))
                       .bind('fill', 'color')
-                      .bind(new go.Binding('height', 'text', function (text) {
-                        const lineHeight = 20; // Assuming each line of text occupies 20 units of height
-                        const numOfLines = text ? Math.ceil(text.length / 20) : 1;
-                        return Math.max(50, numOfLines * lineHeight); // Adjust based on your preference
+                      .bind(new go.Binding('height', 'text', (text) => {
+                        const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+                        const numOfLines = text ? Math.ceil(text.length / 20) : 1
+                        return Math.max(50, numOfLines * lineHeight) // we can adjust it
                       })))
                   .add(new go.TextBlock({
                         margin: 8,
@@ -96,12 +101,23 @@ function initDiagram() {
                         maxLines: 5,
                         isMultiline: true,
                         textAlign: 'center',
-                        // wrap: go.WrapFit
+                        // wrap: go.TextBlock.WrapFit, // Check
                       })
-                          .bind('text', 'hadith')
-                  )) // End of TextBlock
+                          .bind('text', 'hadith'),
+                  )), // End of TextBlock
       )
   // New code for link
+
+  // ------------------------------------------------------------------------------
+  // .add(new go.Binding('toolTip', 'hadith', function(hadith, node) {
+  //   return go.GraphObject.make(go.Adornment, 'Auto',
+  //     go.GraphObject.make(go.Shape, { fill: '#FFFFCC' }),
+  //     go.GraphObject.make(go.TextBlock, { margin: 4 }, hadith)
+  //   );
+  // }))
+  // .bind('width', 'hadithId', (hadith) => Math.max(Math.min(hadith.length  2, 400), 200))
+  // .bind('height', 'hadithId', (hadith) => Math.max(Math.min(hadith.length  1.2, 100), 50))
+  // .bind('maxLines', 'hadithId', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))
 
   myDiagram.linkTemplate = new go.Link({
     fromEndSegmentLength: 10,
@@ -110,15 +126,19 @@ function initDiagram() {
     relinkableTo: true,
     routing: go.Routing.Orthogonal,
     corner: 45,
+    // curve: go.Curve.JumpGap,
+    // curviness: 100,
   })
       .add(new go.Shape({strokeWidth: 2}).bind('stroke', 'color'))
-      .add(new go.Shape({toArrow: 'Standard', strokeWidth: 2}).bind('fill', 'color')
-          .bind('stroke', 'color'))
+      .add(new go.Shape({toArrow: 'Standard', strokeWidth: 2}).bind('stroke', 'color').bind('fill', 'color'))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
-  new go.Overview('myOverviewDiv', {observed: myDiagram})
-  new ZoomSlider(myDiagram)
+  const Overview = new go.Overview('myOverviewDiv', {observed: myDiagram})
+  const zoomSlider = new ZoomSlider(myDiagram, {
+    orientation: 'horizontal',
+    alignment: go.Spot.TopRight,
+  })
 
   document.getElementById('zoomToFit').addEventListener('click', () => myDiagram.commandHandler.zoomToFit())
   document.getElementById('centerRoot').addEventListener('click', () => {
@@ -131,17 +151,6 @@ function initDiagram() {
   // })
 }
 
-function toggleReadMore(data) {
-  const node = myDiagram.findNodeForData(data)
-  if (node) {
-    myDiagram.model.commit((m) => {
-      m.set(data, 'showFullText', !data.showFullText)
-      // m.set(data, 'showShortText', data.showFullText)
-      m.set(data, 'showReadMore', !data.showFullText)
-    })
-  }
-}
-
 onMounted(() => {
   initDiagram()
 })
@@ -149,19 +158,9 @@ onMounted(() => {
 // Fetch data and update the diagram
 async function fetchClusterData() {
   try {
-    const response = await axios.get(`http://localhost:5000/cluster/${clusterNumber.value}`)
+    const response = await axios.get(`http://${window.location.hostname}:5000/cluster/${clusterNumber.value}`)
     result.value = response.data
-    nodes.value = response.data.nodes.map(node => {
-      const maxLength = 200  // Adjust as needed
-      return {
-        ...node,
-        shortText: node.hadith.length > maxLength ? node.hadith.slice(0, maxLength) : node.hadith,
-        fullText: node.hadith,
-        showFullText: false,
-        showReadMore: node.hadith.length > maxLength,
-        readMoreText: 'Read more'
-      }
-    })
+    nodes.value = response.data.nodes
     relations.value = response.data.relations
   } catch (error) {
     console.error('There was an error fetching the data:', error)
@@ -175,12 +174,11 @@ watch([nodes, relations], () => {
 })
 </script>
 
-
 <template>
-  <div class="hadith-graph">
+  <div className="navbar">
     <!--    <h1>Hadith Graph Data</h1> -->
-    <div class="graph-control">
-      <div class="zoom-buttons">
+    <div className="graph-control">
+      <div className="zoom-buttons">
         <button id="zoomToFit">
           Zoom to Fit
         </button>
@@ -189,15 +187,15 @@ watch([nodes, relations], () => {
         </button>
       </div>
 
-      <div class="input-cluster">
+      <div className="input-cluster">
         <input
             v-model="clusterNumber"
-            class="cluster-number"
+            className="cluster-number"
             type="number"
             placeholder="Enter cluster number"
         >
         <button
-            class="fetch-button"
+            className="fetch-button"
             @click="fetchClusterData"
         >
           Get Cluster Data
@@ -206,7 +204,7 @@ watch([nodes, relations], () => {
     </div>
   </div>
 
-  <div class="parent-diagram">
+  <div className="parent-diagram">
     <div
         id="myDiagramDiv"
     />
@@ -223,15 +221,15 @@ watch([nodes, relations], () => {
   </div>
 </template>
 
-<style scoped>
-.parent-diagram {
-  position: relative;
-  height: calc(100vh - 115px);
-  width: calc(100vw - 8%);
-  margin: 0 auto;
+<style>
+.zoomSlider {
+  position: absolute;
+  top: -55px !important;
+  right: 10px !important;
 }
 
-.hadith-graph {
+.navbar {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -263,6 +261,31 @@ watch([nodes, relations], () => {
   border-radius: 5px;
 }
 
+.zoom-buttons button {
+  font-family: "JetBrains Mono Light", ui-monospace;
+  font-size: 1rem;
+  color: #450a0a;
+  background: #dfadfc;
+  font-weight: bold;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 5px;
+}
+
+.zoom-buttons button:hover {
+  background: #c597fc;
+  transition: 0.2s ease;
+}
+
+/* ---------- Diagram */
+
+.parent-diagram {
+  position: relative;
+  height: calc(100vh - 115px);
+  width: calc(100vw - 8%);
+  margin: 0 auto;
+}
+
 #myDiagramDiv {
   border: 3px solid green;
   height: 100%;
@@ -284,22 +307,6 @@ watch([nodes, relations], () => {
   display: flex;
   gap: 10px;
   justify-content: center;
-}
-
-.zoom-buttons button {
-  font-family: "JetBrains Mono Light", ui-monospace;
-  font-size: 1rem;
-  color: #450a0a;
-  background: #dfadfc;
-  font-weight: bold;
-  border: none;
-  padding: 8px 10px;
-  border-radius: 5px;
-}
-
-.zoom-buttons button:hover {
-  background: #c597fc;
-  transition: 0.2s ease;
 }
 
 .hadith-graph h1 {
