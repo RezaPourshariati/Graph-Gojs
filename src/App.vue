@@ -31,7 +31,7 @@ function initDiagram() {
   })
       .add(
           new go.Shape('RoundedRectangle', {
-            strokeWidth: 2,
+            strokeWidth: 4,
             stroke: 'orange',
             fill: 'transparent',
             // background: 'transparent', didn't work
@@ -51,8 +51,8 @@ function initDiagram() {
             background: 'transparent',
             // padding: 8,
           })
-              .add(new go.TextBlock('HadithId Link', {
-                margin: 8,
+              .add(new go.TextBlock('HadithId Link', { // ------------ Id Link
+                margin: new go.Margin(8, 0, -8, 8),
                 // background: 'yellow',
                 alignment: go.Spot.Left,
                 stroke: '#ff006e',
@@ -61,7 +61,7 @@ function initDiagram() {
                 textAlign: 'center',
                 maxSize: new go.Size(400, 100), // Check
                 cursor: 'pointer',
-                wrap: go.TextBlock.WrapFit, // Check
+                // wrap: go.TextBlock.WrapFit, // Check
                 click(e, obj) { // click event handler
                   const node = obj.part
                   if (node) {
@@ -69,34 +69,51 @@ function initDiagram() {
                     window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank')
                   }
                 },
-              })
-                  .bind('text', 'hadithId'))
+              }).bind('text', 'hadithId'))
               // Ending the last add
-              .add(new go.Panel('Auto', {background: 'transparent', margin: 1})
+
+              .add(new go.Shape('MinusLine', {
+                // start: new go.Point(0, 0), // start at top left
+                // end: new go.Point(500, 0), // end at top right
+                margin: new go.Margin(-10, 0, -25, 0),
+                stroke: 'orange', // orange color for the top border
+                strokeWidth: 4, // width of the top border
+                background: 'transparent',
+                width: 350,
+                maxWidth: 400,
+              }))
+
+              .add(new go.Panel('Auto', {
+                background: 'transparent',
+                margin: 0,
+                // defaultRowSeparatorStroke: '', // Check
+              })
+                  .bind('background', 'color')
                   .add(new go.Shape('RoundedRectangle', {
-                    strokeWidth: 2,
-                    stroke: 'orange',
-                    fill: 'transparent',
-                    width: 350,
-                    maxWidth: 400,
-                    // background: 'transparent', // didn't work
-                  })
+                        strokeWidth: 0,
+                        stroke: 'orange',
+                        fill: 'transparent',
+                        width: 350,
+                        maxWidth: 400,
+                        // background: 'transparent', // didn't work
+                      })
                       .bind(new go.Binding('width', 'text', (text) => {
                         const textLength = text ? text.length : 0
                         const minWidth = 80 // Minimum width for the node
                         return Math.max(minWidth, textLength * 5) // we can adjust it
                       }))
-                      .bind('fill', 'color')
+                      // .bind('fill', 'color')
                       .bind(new go.Binding('height', 'text', (text) => {
                         const lineHeight = 20 // Assuming each line of text occupies 20 units of height
                         const numOfLines = text ? Math.ceil(text.length / 20) : 1
                         return Math.max(50, numOfLines * lineHeight) // we can adjust it
-                      })))
+                      }))
+                  )
                   .add(new go.TextBlock({
-                        margin: 8,
+                        margin: new go.Margin(10, 20, 10, 20),
                         stroke: '#333',
                         font: 'bold 14pt sans-serif',
-                        width: 350,
+                        width: 320,
                         maxWidth: 400,
                         maxLines: 5,
                         isMultiline: true,
@@ -175,10 +192,10 @@ watch([nodes, relations], () => {
 </script>
 
 <template>
-  <div className="navbar">
+  <div class="navbar">
     <!--    <h1>Hadith Graph Data</h1> -->
-    <div className="graph-control">
-      <div className="zoom-buttons">
+    <div class="graph-control">
+      <div class="zoom-buttons">
         <button id="zoomToFit">
           Zoom to Fit
         </button>
@@ -187,15 +204,15 @@ watch([nodes, relations], () => {
         </button>
       </div>
 
-      <div className="input-cluster">
+      <div class="input-cluster">
         <input
             v-model="clusterNumber"
-            className="cluster-number"
+            class="cluster-number"
             type="number"
             placeholder="Enter cluster number"
         >
         <button
-            className="fetch-button"
+            class="fetch-button"
             @click="fetchClusterData"
         >
           Get Cluster Data
@@ -204,7 +221,7 @@ watch([nodes, relations], () => {
     </div>
   </div>
 
-  <div className="parent-diagram">
+  <div class="parent-diagram">
     <div
         id="myDiagramDiv"
     />
