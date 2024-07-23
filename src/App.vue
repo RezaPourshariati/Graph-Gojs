@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref, watch} from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import go from 'gojs'
 import axios from 'axios'
 
@@ -31,7 +31,7 @@ function initDiagram() {
   })
       .add(
           new go.Shape('RoundedRectangle', {
-            strokeWidth: 4,
+            strokeWidth: 2,
             stroke: 'orange',
             fill: 'transparent',
             // background: 'transparent', didn't work
@@ -52,14 +52,14 @@ function initDiagram() {
             // padding: 8,
           })
               .add(new go.TextBlock('HadithId Link', { // ------------ Id Link
-                margin: new go.Margin(8, 0, -8, 8),
+                margin: new go.Margin(8, 0, 0, 8),
                 // background: 'yellow',
                 alignment: go.Spot.Left,
                 stroke: '#ff006e',
                 font: 'bold 12pt JetBrains Mono Light',
                 isMultiline: true,
                 textAlign: 'center',
-                maxSize: new go.Size(400, 100), // Check
+                // maxSize: new go.Size(350, 100), // Check
                 cursor: 'pointer',
                 // wrap: go.TextBlock.WrapFit, // Check
                 click(e, obj) { // click event handler
@@ -77,7 +77,7 @@ function initDiagram() {
                 // end: new go.Point(500, 0), // end at top right
                 margin: new go.Margin(-10, 0, -25, 0),
                 stroke: 'orange', // orange color for the top border
-                strokeWidth: 4, // width of the top border
+                strokeWidth: 2, // width of the top border
                 background: 'transparent',
                 width: 350,
                 maxWidth: 400,
@@ -91,23 +91,24 @@ function initDiagram() {
                   .bind('background', 'color')
                   .add(new go.Shape('RoundedRectangle', {
                         strokeWidth: 0,
+                        margin: new go.Margin(0, 2, 0, 2),
                         stroke: 'orange',
                         fill: 'transparent',
                         width: 350,
                         maxWidth: 400,
                         // background: 'transparent', // didn't work
                       })
-                      .bind(new go.Binding('width', 'text', (text) => {
-                        const textLength = text ? text.length : 0
-                        const minWidth = 80 // Minimum width for the node
-                        return Math.max(minWidth, textLength * 5) // we can adjust it
-                      }))
-                      // .bind('fill', 'color')
-                      .bind(new go.Binding('height', 'text', (text) => {
-                        const lineHeight = 20 // Assuming each line of text occupies 20 units of height
-                        const numOfLines = text ? Math.ceil(text.length / 20) : 1
-                        return Math.max(50, numOfLines * lineHeight) // we can adjust it
-                      }))
+                          .bind(new go.Binding('width', 'text', (text) => {
+                            const textLength = text ? text.length : 0
+                            const minWidth = 80 // Minimum width for the node
+                            return Math.max(minWidth, textLength * 5) // we can adjust it
+                          }))
+                          // .bind('fill', 'color')
+                          .bind(new go.Binding('height', 'text', (text) => {
+                            const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+                            const numOfLines = text ? Math.ceil(text.length / 20) : 1
+                            return Math.max(50, numOfLines * lineHeight) // we can adjust it
+                          })),
                   )
                   .add(new go.TextBlock({
                         margin: new go.Margin(10, 20, 10, 20),
@@ -146,12 +147,12 @@ function initDiagram() {
     // curve: go.Curve.JumpGap,
     // curviness: 100,
   })
-      .add(new go.Shape({strokeWidth: 2}).bind('stroke', 'color'))
-      .add(new go.Shape({toArrow: 'Standard', strokeWidth: 2}).bind('stroke', 'color').bind('fill', 'color'))
+      .add(new go.Shape({ strokeWidth: 2 }).bind('stroke', 'color'))
+      .add(new go.Shape({ toArrow: 'Standard', strokeWidth: 2 }).bind('stroke', 'color').bind('fill', 'color'))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
-  const Overview = new go.Overview('myOverviewDiv', {observed: myDiagram})
+  const Overview = new go.Overview('myOverviewDiv', { observed: myDiagram })
   const zoomSlider = new ZoomSlider(myDiagram, {
     orientation: 'horizontal',
     alignment: go.Spot.TopRight,
@@ -179,7 +180,8 @@ async function fetchClusterData() {
     result.value = response.data
     nodes.value = response.data.nodes
     relations.value = response.data.relations
-  } catch (error) {
+  }
+  catch (error) {
     console.error('There was an error fetching the data:', error)
   }
 }
