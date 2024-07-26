@@ -31,7 +31,8 @@ function initDiagram() {
   })
       .add(
           new go.Shape('RoundedRectangle', {
-            strokeWidth: 4,
+            margin: new go.Margin(0, 7, 2, 7),
+            strokeWidth: 2,
             stroke: 'orange',
             fill: 'transparent',
             // background: 'transparent', didn't work
@@ -51,8 +52,18 @@ function initDiagram() {
             background: 'transparent',
             // padding: 8,
           })
+              .add(new go.Shape('MinusLine', {
+                // start: new go.Point(0, 0), // start at top left
+                // end: new go.Point(500, 0), // end at top right
+                margin: new go.Margin(10, 2, -58, 2),
+                stroke: 'orange', // orange color for the top border
+                strokeWidth: 2, // width of the top border
+                background: 'transparent',
+                width: 353,
+                maxWidth: 400,
+              }))
               .add(new go.TextBlock('HadithId Link', { // ------------ Id Link
-                margin: new go.Margin(8, 0, -8, 8),
+                margin: new go.Margin(5, 0, 8, 15),
                 // background: 'yellow',
                 alignment: go.Spot.Left,
                 stroke: '#ff006e',
@@ -72,17 +83,6 @@ function initDiagram() {
               }).bind('text', 'hadithId'))
               // Ending the last add
 
-              .add(new go.Shape('MinusLine', {
-                // start: new go.Point(0, 0), // start at top left
-                // end: new go.Point(500, 0), // end at top right
-                margin: new go.Margin(-10, 0, -25, 0),
-                stroke: 'orange', // orange color for the top border
-                strokeWidth: 4, // width of the top border
-                background: 'transparent',
-                width: 350,
-                maxWidth: 400,
-              }))
-
               .add(new go.Panel('Auto', {
                 background: 'transparent',
                 margin: 0,
@@ -90,6 +90,7 @@ function initDiagram() {
               })
                   .bind('background', 'color')
                   .add(new go.Shape('RoundedRectangle', {
+                        margin: new go.Margin(0, 2, 0, 2),
                         strokeWidth: 0,
                         stroke: 'orange',
                         fill: 'transparent',
@@ -97,17 +98,17 @@ function initDiagram() {
                         maxWidth: 400,
                         // background: 'transparent', // didn't work
                       })
-                      .bind(new go.Binding('width', 'text', (text) => {
-                        const textLength = text ? text.length : 0
-                        const minWidth = 80 // Minimum width for the node
-                        return Math.max(minWidth, textLength * 5) // we can adjust it
-                      }))
-                      // .bind('fill', 'color')
-                      .bind(new go.Binding('height', 'text', (text) => {
-                        const lineHeight = 20 // Assuming each line of text occupies 20 units of height
-                        const numOfLines = text ? Math.ceil(text.length / 20) : 1
-                        return Math.max(50, numOfLines * lineHeight) // we can adjust it
-                      }))
+                          .bind(new go.Binding('width', 'text', (text) => {
+                            const textLength = text ? text.length : 0
+                            const minWidth = 80 // Minimum width for the node
+                            return Math.max(minWidth, textLength * 5) // we can adjust it
+                          }))
+                          // .bind('fill', 'color')
+                          .bind(new go.Binding('height', 'text', (text) => {
+                            const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+                            const numOfLines = text ? Math.ceil(text.length / 20) : 1
+                            return Math.max(50, numOfLines * lineHeight) // we can adjust it
+                          }))
                   )
                   .add(new go.TextBlock({
                         margin: new go.Margin(10, 20, 10, 20),
