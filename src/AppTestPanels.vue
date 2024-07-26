@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import go, {TextOverflow, Wrap} from 'gojs'
+import {onMounted, ref, watch} from 'vue'
+import go from 'gojs'
 import axios from 'axios'
 
 const clusterNumber = ref('')
@@ -23,75 +23,101 @@ function initDiagram() {
     }),
   })
 
-  // myDiagram.nodeTemplate = new go.Node('Auto')
-  //   .add(new go.Shape('RoundedRectangle', { strokeWidth: 0, fill: 'white', width: 440, height: 130 })
-  //     .bind('fill', 'color'))
-  //   .add(new go.TextBlock({
-  //     margin: 8,
-  //     stroke: '#333',
-  //     font: 'bold 14pt sans-serif',
-  //     width: 350,
-  //     height: 80,
-  //     maxLines: 5,
-  //     isMultiline: true,
-  //     // text: "verticalAlignment: center",
-  //     // text: "alignment: Center",
-  //     textAlign: 'center',
-  //     wrap: go.Wrap.Fit,
-  //   })
-  //     .bind('text', 'hadith'))
+  myDiagram.nodeTemplate = new go.Node('Auto', {
+    // selectionObjectName: 'SCROLLER',
+    // resizable: true,
+    // resizeObjectName: 'SCROLLER',
+    // portSpreading: go.PortSpreading.None,
+  })
+      .add(
+          new go.Shape('RoundedRectangle', {
+            strokeWidth: 2,
+            stroke: 'orange',
+            fill: 'transparent',
+            // background: 'transparent', didn't work
+          })
+              .bind(new go.Binding('width', 'text', (text) => {
+                const textLength = text ? text.length : 0
+                const minWidth = 80 // Minimum width for the node
+                return Math.max(minWidth, textLength * 5) // we can adjust it
+              }))
+              // .bind('fill', 'color')
+              .bind(new go.Binding('height', 'text', (text) => {
+                const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+                const numOfLines = text ? Math.ceil(text.length / 20) : 1
+                return Math.max(50, numOfLines * lineHeight) // we can adjust it
+              })),
+          new go.Panel('Vertical', {
+            background: 'transparent',
+            // padding: 8,
+          })
+              .add(new go.TextBlock('HadithId Link', {
+                margin: 8,
+                // background: 'yellow',
+                alignment: go.Spot.Left,
+                stroke: '#ff006e',
+                font: 'bold 12pt JetBrains Mono Light',
+                isMultiline: true,
+                textAlign: 'center',
+                maxSize: new go.Size(400, 100), // Check
+                cursor: 'pointer',
+                wrap: go.TextBlock.WrapFit, // Check
+                click(e, obj) { // click event handler
+                  const node = obj.part
+                  if (node) {
+                    const nodeId = node.data.hadithId // Assuming 'hadithId' is the id of the node
+                    window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank')
+                  }
+                },
+              })
+                  .bind('text', 'hadithId'))
+              // Ending the last add
+              .add(new go.Panel('Auto', {background: 'transparent', margin: 1})
+                  .add(new go.Shape('RoundedRectangle', {
+                    strokeWidth: 2,
+                    stroke: 'orange',
+                    fill: 'transparent',
+                    width: 350,
+                    maxWidth: 400,
+                    // background: 'transparent', // didn't work
+                  })
+                      .bind(new go.Binding('width', 'text', (text) => {
+                        const textLength = text ? text.length : 0
+                        const minWidth = 80 // Minimum width for the node
+                        return Math.max(minWidth, textLength * 5) // we can adjust it
+                      }))
+                      .bind('fill', 'color')
+                      .bind(new go.Binding('height', 'text', (text) => {
+                        const lineHeight = 20 // Assuming each line of text occupies 20 units of height
+                        const numOfLines = text ? Math.ceil(text.length / 20) : 1
+                        return Math.max(50, numOfLines * lineHeight) // we can adjust it
+                      })))
+                  .add(new go.TextBlock({
+                        margin: 8,
+                        stroke: '#333',
+                        font: 'bold 14pt sans-serif',
+                        width: 350,
+                        maxWidth: 400,
+                        maxLines: 5,
+                        isMultiline: true,
+                        textAlign: 'center',
+                        // wrap: go.TextBlock.WrapFit, // Check
+                      })
+                          .bind('text', 'hadith'),
+                  )), // End of TextBlock
+      )
+  // New code for link
 
-  myDiagram.nodeTemplate = new go.Node('Auto')
-      .add(new go.Shape('RoundedRectangle', { strokeWidth: 2, stroke: 'orange', fill: 'white', alignment: go.Spot.Center })
-          .bind('fill', 'color')
-          .bind('width', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 2.5, 450), 250))  // adjust the multiplier as needed
-          .bind('height', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 1.5, 150), 85)))  // adjust the multiplier and max height as needed
-      .add(new go.TextBlock({
-        margin: 8,
-        stroke: '#333',
-        font: 'bold 14pt sans-serif',
-        // maxLines: 5,
-        isMultiline: true,
-        textAlign: 'center',
-        maxSize: new go.Size(400, 100),
-        // overflow: TextOverflow.Clip,
-        wrap: Wrap.Fit,
-      })
-          .bind('text', 'hadith')
-          .bind('width', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))  // adjust the multiplier as needed
-          .bind('height', 'hadith', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
-          .bind('maxLines', 'hadith', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))  // adjust the multiplier and max height as needed
-      // new code for link
-      .add(new go.TextBlock("id",{
-        margin: 8,
-        stroke: '#333',
-        font: 'bold 14pt sans-serif',
-        isMultiline: true,
-        textAlign: 'center',
-        maxSize: new go.Size(400, 100),
-        cursor: 'pointer',
-        wrap: Wrap.Fit,
-        click: function(e, obj) {  // add click event handler
-          const node = obj.part;
-          if (node) {
-            const nodeId = node.data.hadithId;  // assuming 'key' is the id of the node
-            window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank');
-          }
-        }
-      })
-          .bind('text', 'hadithId'))
-  // .bind('width', 'hadithId', (hadith) => Math.max(Math.min(hadith.length * 2, 400), 200))
-  // .bind('height', 'hadithId', (hadith) => Math.max(Math.min(hadith.length * 1.2, 100), 50))
+  // ------------------------------------------------------------------------------
+  // .add(new go.Binding('toolTip', 'hadith', function(hadith, node) {
+  //   return go.GraphObject.make(go.Adornment, 'Auto',
+  //     go.GraphObject.make(go.Shape, { fill: '#FFFFCC' }),
+  //     go.GraphObject.make(go.TextBlock, { margin: 4 }, hadith)
+  //   );
+  // }))
+  // .bind('width', 'hadithId', (hadith) => Math.max(Math.min(hadith.length  2, 400), 200))
+  // .bind('height', 'hadithId', (hadith) => Math.max(Math.min(hadith.length  1.2, 100), 50))
   // .bind('maxLines', 'hadithId', (hadith) => Math.max(Math.floor(hadith.length / 20), 2)))
-  // .add(
-  //     new go.Panel("Horizontal")
-  //         .add(
-  //             go.GraphObject.build("SubGraphExpanderButton",
-  //                 { margin: new go.Margin(0, 3, 5, 0) }),
-  //             new go.TextBlock("Group")
-  //         ),
-  //     new go.Placeholder()
-  // )
 
   myDiagram.linkTemplate = new go.Link({
     fromEndSegmentLength: 10,
@@ -100,14 +126,19 @@ function initDiagram() {
     relinkableTo: true,
     routing: go.Routing.Orthogonal,
     corner: 45,
+    // curve: go.Curve.JumpGap,
+    // curviness: 100,
   })
-      .add(new go.Shape({ strokeWidth: 2 }).bind('stroke', 'color'))
-      .add(new go.Shape({ toArrow: 'Standard', strokeWidth: 2 }))
+      .add(new go.Shape({strokeWidth: 2}).bind('stroke', 'color'))
+      .add(new go.Shape({toArrow: 'Standard', strokeWidth: 2}).bind('stroke', 'color').bind('fill', 'color'))
 
   myDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
-  new go.Overview('myOverviewDiv', { observed: myDiagram })
-  new ZoomSlider(myDiagram)
+  const Overview = new go.Overview('myOverviewDiv', {observed: myDiagram})
+  const zoomSlider = new ZoomSlider(myDiagram, {
+    orientation: 'horizontal',
+    alignment: go.Spot.TopRight,
+  })
 
   document.getElementById('zoomToFit').addEventListener('click', () => myDiagram.commandHandler.zoomToFit())
   document.getElementById('centerRoot').addEventListener('click', () => {
@@ -127,12 +158,11 @@ onMounted(() => {
 // Fetch data and update the diagram
 async function fetchClusterData() {
   try {
-    const response = await axios.get(`http://localhost:5000/cluster/${clusterNumber.value}`)
+    const response = await axios.get(`http://${window.location.hostname}:5000/cluster/${clusterNumber.value}`)
     result.value = response.data
     nodes.value = response.data.nodes
     relations.value = response.data.relations
-  }
-  catch (error) {
+  } catch (error) {
     console.error('There was an error fetching the data:', error)
   }
 }
@@ -145,10 +175,10 @@ watch([nodes, relations], () => {
 </script>
 
 <template>
-  <div class="hadith-graph">
+  <div className="navbar">
     <!--    <h1>Hadith Graph Data</h1> -->
-    <div class="graph-control">
-      <div class="zoom-buttons">
+    <div className="graph-control">
+      <div className="zoom-buttons">
         <button id="zoomToFit">
           Zoom to Fit
         </button>
@@ -157,15 +187,15 @@ watch([nodes, relations], () => {
         </button>
       </div>
 
-      <div class="input-cluster">
+      <div className="input-cluster">
         <input
             v-model="clusterNumber"
-            class="cluster-number"
+            className="cluster-number"
             type="number"
             placeholder="Enter cluster number"
         >
         <button
-            class="fetch-button"
+            className="fetch-button"
             @click="fetchClusterData"
         >
           Get Cluster Data
@@ -174,7 +204,7 @@ watch([nodes, relations], () => {
     </div>
   </div>
 
-  <div class="parent-diagram">
+  <div className="parent-diagram">
     <div
         id="myDiagramDiv"
     />
@@ -191,15 +221,15 @@ watch([nodes, relations], () => {
   </div>
 </template>
 
-<style scoped>
-.parent-diagram {
-  position: relative;
-  height: calc(100vh - 115px);
-  width: calc(100vw - 8%);
-  margin: 0 auto;
+<style>
+.zoomSlider {
+  position: absolute;
+  top: -55px !important;
+  right: 10px !important;
 }
 
-.hadith-graph {
+.navbar {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -231,6 +261,31 @@ watch([nodes, relations], () => {
   border-radius: 5px;
 }
 
+.zoom-buttons button {
+  font-family: "JetBrains Mono Light", ui-monospace;
+  font-size: 1rem;
+  color: #450a0a;
+  background: #dfadfc;
+  font-weight: bold;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 5px;
+}
+
+.zoom-buttons button:hover {
+  background: #c597fc;
+  transition: 0.2s ease;
+}
+
+/* ---------- Diagram */
+
+.parent-diagram {
+  position: relative;
+  height: calc(100vh - 115px);
+  width: calc(100vw - 8%);
+  margin: 0 auto;
+}
+
 #myDiagramDiv {
   border: 3px solid green;
   height: 100%;
@@ -252,22 +307,6 @@ watch([nodes, relations], () => {
   display: flex;
   gap: 10px;
   justify-content: center;
-}
-
-.zoom-buttons button {
-  font-family: "JetBrains Mono Light", ui-monospace;
-  font-size: 1rem;
-  color: #450a0a;
-  background: #dfadfc;
-  font-weight: bold;
-  border: none;
-  padding: 8px 10px;
-  border-radius: 5px;
-}
-
-.zoom-buttons button:hover {
-  background: #c597fc;
-  transition: 0.2s ease;
 }
 
 .hadith-graph h1 {
