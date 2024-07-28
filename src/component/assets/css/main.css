@@ -1,0 +1,64 @@
+#app {
+    height: 100vh;
+}
+
+.input-cluster {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fetch-button {
+    font-family: "serif", ui-monospace;
+    font-size: 1rem;
+    color: #450a0a;
+    background: #dfadfc;
+    font-weight: bold;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 5px;
+}
+
+.zoom-buttons button {
+    font-family: "serif", ui-monospace;
+    font-size: 1rem;
+    color: #450a0a;
+    background: #dfadfc;
+    font-weight: bold;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 5px;
+}
+
+.zoom-buttons button:hover {
+    background: #c597fc;
+    transition: 0.2s ease;
+}
+
+#overviewDiv {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    height: 10%;
+    width: 10%;
+    border: 1px solid darkgray;
+}
+
+.zoom-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.fetch-button:hover {
+    background: #c597fc;
+    transition: 0.2s ease;
+}
+
+.cluster-number {
+    padding: 7px;
+    border: 2px solid #3b82f6;
+    border-radius: 6px;
+    outline: none;
+}
