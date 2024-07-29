@@ -87,9 +87,11 @@ export class ZoomSlider {
         this._orientation = options.orientation;
       if (options.opacity !== undefined)
         this._opacity = options.opacity;
+      // ------------------------------------------------------
       if (options.onZoomChanged !== undefined) {
         this.onZoomChanged = options.onZoomChanged; // Initialize the callback
       }
+      // ------------------------------------------------------
     }
     // Prepare change listeners
     const self = this;
@@ -412,9 +414,11 @@ export class ZoomSlider {
     const B = diagram.commandHandler.zoomFactor;
     diagram.scale = A * Math.pow(B, x);
 
+    // ------------------------------------------------------
     if (typeof this.onZoomChanged === 'function') {
       this.onZoomChanged(); // Call the callback
     }
+    // ------------------------------------------------------
   }
   /**
    * Remove the slider from the page.

@@ -2,13 +2,16 @@
 import axios from 'axios'
 import go from 'gojs'
 import {onMounted, ref, watch} from 'vue'
+import Slider from 'primevue/slider'
 import {ZoomSlider} from './assets/js/zoomSlider.js'
 
 const clusterNumber = ref('1400')
 const nodes = ref([])
 const relations = ref([])
+const sliderValue = ref(20) // This will be synced with the ZoomSlider value
 
 let graphDiagram
+let zoomSlider
 const shapeWidth = 350
 
 // Watch nodes and relations for changes and update the diagram model
@@ -16,9 +19,21 @@ watch([nodes, relations], () => {
   updateModel()
 })
 
-// Initialize the GoJS Diagram -----> Panel Position Solution
+// Watch the PrimeVue slider value and update the ZoomSlider
+watch(sliderValue, (newValue) => {
+  if (zoomSlider) {
+    const zoomInput = zoomSlider._zoomSliderRange
+    if (zoomInput) {
+      zoomInput.value = newValue
+      zoomSlider.valueToScale()
+    }
+  }
+})
+
+// Initialize the GoJS Diagram
 function initDiagram() {
-  if (graphDiagram) return;
+  if (graphDiagram)
+    return
 
   graphDiagram = new go.Diagram('graphDiv', {
     layout: new go.LayeredDigraphLayout({
@@ -113,10 +128,10 @@ function initDiagram() {
   graphDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
   const overView = new go.Overview('overviewDiv', {observed: graphDiagram})
-  const zoomSlider = new ZoomSlider(graphDiagram, {
+
+  zoomSlider = new ZoomSlider(graphDiagram, {
     orientation: 'horizontal',
     alignment: go.Spot.TopRight,
-    onZoomChanged: calculateOverviewMap,
   })
 
   document.getElementById('zoomToFit')
@@ -129,14 +144,30 @@ function initDiagram() {
         graphDiagram.commandHandler.scrollToPart(graphDiagram.findNodeForKey(1))
       })
 
+  // Sync the PrimeVue slider with the ZoomSlider
+  syncSliderWithZoomSlider()
   // Listening to viewport bounds changes, which include zoom and pan events
+  // graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
+  //   calculateOverviewMap()
+  // })
+}
+
+function syncSliderWithZoomSlider() {
+  // Listening to viewport bounds changes, which include zoom and pan events
+  // Update PrimeVue slider when ZoomSlider changes
   graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
-    calculateOverviewMap();
-  });
+    calculateOverviewMap()
+    if (zoomSlider) {
+      zoomSlider.scaleToValue()
+      const zoomInput = zoomSlider._zoomSliderRange
+      if (zoomInput)
+        sliderValue.value = Number.parseFloat(zoomInput.value)
+    }
+  })
 }
 
 function calculateOverviewMap() {
-  // console.log('called.')
+  // console.log('Calculation called.')
   setTimeout(() => {
     const parentCanvasElement = document.querySelector('#graphDiv>div')
     const canvasElement = document.querySelector('#graphDiv>div>div')
@@ -202,6 +233,18 @@ onMounted(() => {
         >
           Show Diagram
         </button>
+        <div class="w-8rem">
+          <Slider
+              v-model="sliderValue"
+              class="w-full bg-red-600"
+              :min="-50"
+              :max="100"
+          />
+          <input
+              v-model="sliderValue"
+              class="w-6rem"
+          >
+        </div>
       </div>
     </div>
     <div class="graph-container flex-auto m-2 relative">
