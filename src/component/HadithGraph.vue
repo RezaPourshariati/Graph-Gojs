@@ -2,8 +2,8 @@
 import axios from 'axios'
 import go from 'gojs'
 import {onMounted, ref, watch} from 'vue'
-import Slider from 'primevue/slider'
 import {ZoomSlider} from './assets/js/zoomSlider.js'
+import Slider from 'primevue/slider'
 
 const clusterNumber = ref('1400')
 const nodes = ref([])
@@ -128,11 +128,22 @@ function initDiagram() {
   graphDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
   const overView = new go.Overview('overviewDiv', {observed: graphDiagram})
-
   zoomSlider = new ZoomSlider(graphDiagram, {
     orientation: 'horizontal',
     alignment: go.Spot.TopRight,
   })
+
+  // Hide ZoomSlider's UI elements after initialization
+  if (zoomSlider) {
+    const zoomSliderRange = zoomSlider._zoomSliderRange
+    const zoomSliderInBtn = zoomSlider._zoomSliderIn
+    const zoomSliderOutBtn = zoomSlider._zoomSliderOut
+    if (zoomSliderRange && zoomSliderInBtn && zoomSliderOutBtn) {
+      zoomSliderRange.style.display = 'none'
+      zoomSliderInBtn.style.display = 'none'
+      zoomSliderOutBtn.style.display = 'none'
+    }
+  }
 
   document.getElementById('zoomToFit')
       .addEventListener('click', () => {
@@ -153,15 +164,15 @@ function initDiagram() {
 }
 
 function syncSliderWithZoomSlider() {
-  // Listening to viewport bounds changes, which include zoom and pan events
   // Update PrimeVue slider when ZoomSlider changes
-  graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
-    calculateOverviewMap()
+  graphDiagram.addDiagramListener('ViewportBoundsChanged', () => {
+    calculateOverviewMap() // Listening to viewport bounds changes, which include zoom and pan events (for overview map)
     if (zoomSlider) {
       zoomSlider.scaleToValue()
       const zoomInput = zoomSlider._zoomSliderRange
-      if (zoomInput)
-        sliderValue.value = Number.parseFloat(zoomInput.value)
+      if (zoomInput) {
+        sliderValue.value = parseFloat(zoomInput.value)
+      }
     }
   })
 }
@@ -180,6 +191,7 @@ function calculateOverviewMap() {
   }, 0)
 }
 
+
 // Fetch data and update the diagram
 async function fetchClusterData() {
   try {
@@ -196,7 +208,6 @@ function updateModel() {
     delete graphDiagram.model
 
   graphDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
-  calculateOverviewMap()
 }
 
 onMounted(() => {
