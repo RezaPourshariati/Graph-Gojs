@@ -244,17 +244,18 @@ onMounted(() => {
         >
           Show Diagram
         </button>
-        <div class="w-8rem">
-          <Slider
-              v-model="sliderValue"
-              class="w-full bg-red-600"
-              :min="-50"
-              :max="100"
-          />
-          <input
-              v-model="sliderValue"
-              class="w-6rem"
-          >
+        <div class="w-10rem flex flex-column align-items-center gap-2 bg-yellow-100 p-2 border-2 border-red-300">
+          <div class="w-8rem">
+            <Slider
+                v-model="sliderValue"
+                class="w-full bg-red-600"
+                :min="-50"
+                :max="100"
+            />
+          </div>
+          <div>
+            <span>{{ sliderValue }}</span>
+          </div>
         </div>
       </div>
     </div>
