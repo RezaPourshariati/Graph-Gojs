@@ -212,9 +212,7 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-column relative h-full">
-    <div
-        class="relative flex justify-content-between align-items-center my-2 mx-7"
-    >
+    <div class="relative flex justify-content-between align-items-center my-2 mx-2">
       <div class="flex align-items-center gap-2">
         <Button id="zoomToFit">
           Zoom to Fit
@@ -243,16 +241,13 @@ onMounted(() => {
           Show Diagram
         </Button>
         <div class="w-10rem flex flex-column align-items-center gap-2 p-2 border-2 border-gray-300 border-round-sm">
-          <div class="w-8rem">
+          <div class="w-8rem py-2">
             <Slider
                 v-model="sliderValue"
                 class="w-full"
                 :min="-50"
                 :max="100"
             />
-          </div>
-          <div>
-            <span>{{ Math.round(sliderValue) }}</span>
           </div>
         </div>
       </div>
@@ -271,6 +266,5 @@ onMounted(() => {
   </div>
 </template>
 
-<style>
-@import './assets/css/main.css';
+<style scoped>
 </style>

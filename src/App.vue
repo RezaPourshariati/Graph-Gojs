@@ -9,4 +9,7 @@ import HadithGraph from './component/HadithGraph.vue'
 </template>
 
 <style>
+#app {
+  height: 100vh;
+}
 </style>
