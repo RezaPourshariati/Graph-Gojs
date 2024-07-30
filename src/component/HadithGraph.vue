@@ -2,16 +2,14 @@
 import axios from 'axios'
 import go from 'gojs'
 import {onMounted, ref, watch} from 'vue'
-import {ZoomSlider} from './assets/js/zoomSlider.js'
 import Slider from 'primevue/slider'
 
 const clusterNumber = ref('1400')
 const nodes = ref([])
 const relations = ref([])
-const sliderValue = ref(20) // This will be synced with the ZoomSlider value
+const sliderValue = ref(20)
 
 let graphDiagram
-let zoomSlider
 const shapeWidth = 350
 
 // Watch nodes and relations for changes and update the diagram model
@@ -19,15 +17,10 @@ watch([nodes, relations], () => {
   updateModel()
 })
 
-// Watch the PrimeVue slider value and update the ZoomSlider
+// Watch the PrimeVue slider value and update the diagram scale
 watch(sliderValue, (newValue) => {
-  if (zoomSlider) {
-    const zoomInput = zoomSlider._zoomSliderRange
-    if (zoomInput) {
-      zoomInput.value = newValue
-      zoomSlider.valueToScale()
-    }
-  }
+  if (graphDiagram)
+    graphDiagram.scale = valueToScale(newValue)
 })
 
 // Initialize the GoJS Diagram
@@ -128,22 +121,6 @@ function initDiagram() {
   graphDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
   const overView = new go.Overview('overviewDiv', {observed: graphDiagram})
-  zoomSlider = new ZoomSlider(graphDiagram, {
-    orientation: 'horizontal',
-    alignment: go.Spot.TopRight,
-  })
-
-  // Hide ZoomSlider's UI elements after initialization
-  if (zoomSlider) {
-    const zoomSliderRange = zoomSlider._zoomSliderRange
-    const zoomSliderInBtn = zoomSlider._zoomSliderIn
-    const zoomSliderOutBtn = zoomSlider._zoomSliderOut
-    if (zoomSliderRange && zoomSliderInBtn && zoomSliderOutBtn) {
-      zoomSliderRange.style.display = 'none'
-      zoomSliderInBtn.style.display = 'none'
-      zoomSliderOutBtn.style.display = 'none'
-    }
-  }
 
   document.getElementById('zoomToFit')
       .addEventListener('click', () => {
@@ -163,16 +140,33 @@ function initDiagram() {
   // })
 }
 
+// Convert scale to slider value
+function scaleToValue(scale) {
+  const minScale = 0
+  const maxScale = 5
+  const minValue = -50
+  const maxValue = 100
+
+  return ((scale - minScale) / (maxScale - minScale)) * (maxValue - minValue) + minValue
+}
+
+// Convert slider value to scale
+function valueToScale(value) {
+  const minScale = 0
+  const maxScale = 5
+  const minValue = -50
+  const maxValue = 100
+
+  return ((value - minValue) / (maxValue - minValue)) * (maxScale - minScale) + minScale
+}
+
 function syncSliderWithZoomSlider() {
-  // Update PrimeVue slider when ZoomSlider changes
-  graphDiagram.addDiagramListener('ViewportBoundsChanged', () => {
-    calculateOverviewMap() // Listening to viewport bounds changes, which include zoom and pan events (for overview map)
-    if (zoomSlider) {
-      zoomSlider.scaleToValue()
-      const zoomInput = zoomSlider._zoomSliderRange
-      if (zoomInput) {
-        sliderValue.value = parseFloat(zoomInput.value)
-      }
+  graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
+    calculateOverviewMap() // Listening to viewport bounds changes for overview map zoom and bounds.
+    // Update PrimeVue slider when ZoomSlider changes
+    if (graphDiagram) {
+      const scale = graphDiagram.scale
+      sliderValue.value = scaleToValue(scale)
     }
   })
 }
@@ -191,7 +185,6 @@ function calculateOverviewMap() {
   }, 0)
 }
 
-
 // Fetch data and update the diagram
 async function fetchClusterData() {
   try {
@@ -208,6 +201,7 @@ function updateModel() {
     delete graphDiagram.model
 
   graphDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
+  calculateOverviewMap()
 }
 
 onMounted(() => {
@@ -219,42 +213,46 @@ onMounted(() => {
 <template>
   <div class="flex flex-column relative h-full">
     <div
-        class="relative flex flex-none justify-content-between align-items-center my-2"
-        style="margin-inline-end: 145px;margin-inline-start: 10px;"
+        class="relative flex justify-content-between align-items-center my-2 mx-7"
     >
-      <div class="zoom-buttons">
-        <button id="zoomToFit">
+      <div class="flex align-items-center gap-2">
+        <Button id="zoomToFit">
           Zoom to Fit
-        </button>
-        <button id="centerRoot">
+        </Button>
+        <Button id="centerRoot">
           Center on root
-        </button>
+        </Button>
       </div>
-      <div class="input-cluster">
-        <input
+      <div class="flex align-items-center gap-2">
+        <InputNumber
             v-model="clusterNumber"
-            class="cluster-number"
+            input-id="minmax-buttons"
+            mode="decimal"
+            show-buttons
+            :min="3"
+            :max="7999"
+            fluid
+            class=""
             type="number"
-            placeholder="Enter cluster number"
             @keyup.enter="fetchClusterData"
-        >
-        <button
+        />
+        <Button
             class="fetch-button"
             @click="fetchClusterData"
         >
           Show Diagram
-        </button>
-        <div class="w-10rem flex flex-column align-items-center gap-2 bg-yellow-100 p-2 border-2 border-red-300">
+        </Button>
+        <div class="w-10rem flex flex-column align-items-center gap-2 p-2 border-2 border-gray-300 border-round-sm">
           <div class="w-8rem">
             <Slider
                 v-model="sliderValue"
-                class="w-full bg-red-600"
+                class="w-full"
                 :min="-50"
                 :max="100"
             />
           </div>
           <div>
-            <span>{{ sliderValue }}</span>
+            <span>{{ Math.round(sliderValue) }}</span>
           </div>
         </div>
       </div>
@@ -266,6 +264,8 @@ onMounted(() => {
       />
       <div
           id="overviewDiv"
+          class="absolute top-0 left-0 z-4 border-1 border-gray-700"
+          style="height: 10%; width: 10%"
       />
     </div>
   </div>
@@ -273,5 +273,4 @@ onMounted(() => {
 
 <style>
 @import './assets/css/main.css';
-@import "./assets/css/zoomSlider.css";
 </style>
