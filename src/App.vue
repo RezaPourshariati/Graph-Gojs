@@ -1,11 +1,14 @@
-<script setup>
+<script setup lang="ts">
 import 'primeflex/primeflex.css'
 import 'primeflex/themes/primeone-light.css'
-import HadithGraph from './component/HadithGraph.vue'
+import HadithGraph from '@/component/HadithGraph.vue'
+import { graphService } from '@/service/GraphService'
 </script>
 
 <template>
-  <HadithGraph />
+  <HadithGraph
+      :graph-service="graphService"
+  />
 </template>
 
 <style>

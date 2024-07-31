@@ -1,15 +1,20 @@
-<script setup>
-import axios from 'axios'
+<script setup lang="ts">
 import go from 'gojs'
 import {onMounted, ref, watch} from 'vue'
 import Slider from 'primevue/slider'
+import type {IGraphService} from './IGraphService.ts'
+import {graphService} from '@/service/GraphService'
 
-const clusterNumber = ref('1400')
+const props = defineProps<{
+  graphService: IGraphService
+}>()
+
+const clusterNumber = ref(1400)
 const nodes = ref([])
 const relations = ref([])
 const sliderValue = ref(20)
 
-let graphDiagram
+let graphDiagram = null
 const shapeWidth = 350
 
 // Watch nodes and relations for changes and update the diagram model
@@ -25,9 +30,6 @@ watch(sliderValue, (newValue) => {
 
 // Initialize the GoJS Diagram
 function initDiagram() {
-  if (graphDiagram)
-    return
-
   graphDiagram = new go.Diagram('graphDiv', {
     layout: new go.LayeredDigraphLayout({
       direction: 90,
@@ -36,11 +38,13 @@ function initDiagram() {
   })
 
   graphDiagram.nodeTemplate = new go.Node('Auto', {})
-      .add(new go.Shape('RoundedRectangle', {
+      .add(
+          new go.Shape('RoundedRectangle', {
             margin: new go.Margin(3, 3, 3, 3),
             strokeWidth: 1,
             stroke: 'orange',
             fill: 'transparent',
+            stretch: go.Stretch.Fill,
             // background: 'transparent', didn't work
           })
               .bind(new go.Binding('height', 'text', (text) => {
@@ -58,6 +62,7 @@ function initDiagram() {
                 background: 'transparent',
                 position: new go.Point(1, -37),
                 width: shapeWidth,
+                stretch: go.Stretch.Fill,
               }))
               .add(new go.TextBlock('HadithId Link', { // ------------ Id Link
                 margin: new go.Margin(8, 0, 0, 0),
@@ -67,12 +72,13 @@ function initDiagram() {
                 font: 'bold 12pt serif',
                 isMultiline: true,
                 cursor: 'pointer',
+                stretch: go.Stretch.Fill,
                 // wrap: go.TextBlock.WrapFit, // Check
                 click(e, obj) { // click event handler
                   const node = obj.part
                   if (node) {
                     const nodeId = node.data.hadithId // Assuming 'hadithId' is the id of the node
-                    window.open(`https://hadith.inoor.ir/fa/hadith/${nodeId}`, '_blank')
+                    window.open(graphService.getUrl(nodeId), '_blank')
                   }
                 },
                 position: new go.Point(10, -38),
@@ -81,22 +87,22 @@ function initDiagram() {
                 background: 'transparent',
                 margin: 0,
                 position: new go.Point(2, 0),
-              }).bind('background', 'color')
+              })
+                  .bind('background', 'color')
                   .add(new go.Shape('RoundedRectangle', {
-                    strokeWidth: 0,
-                    fill: 'transparent',
-                    width: shapeWidth,
-                    maxWidth: 400,
-                  }))
+                        strokeWidth: 0,
+                        fill: 'transparent',
+                        width: shapeWidth,
+                      }),
+                  )
                   .add(new go.TextBlock({
                         margin: new go.Margin(10, 0, 10, 0),
                         stroke: '#333',
                         font: 'bold 14pt sans-serif',
                         width: 320,
-                        maxWidth: 400,
-                        maxLines: 5,
                         isMultiline: true,
                         textAlign: 'right',
+                        maxLines: 5,
                       })
                           .bind('text', 'hadith'),
                   )), // End of TextBlock
@@ -121,23 +127,17 @@ function initDiagram() {
   graphDiagram.model = new go.GraphLinksModel(nodes.value, relations.value)
 
   const overView = new go.Overview('overviewDiv', {observed: graphDiagram})
-
-  document.getElementById('zoomToFit')
-      .addEventListener('click', () => {
-        graphDiagram.commandHandler.zoomToFit()
-      })
-  document.getElementById('centerRoot')
-      .addEventListener('click', () => {
-        graphDiagram.scale = 1
-        graphDiagram.commandHandler.scrollToPart(graphDiagram.findNodeForKey(1))
-      })
-
   // Sync the PrimeVue slider with the ZoomSlider
   syncSliderWithZoomSlider()
   // Listening to viewport bounds changes, which include zoom and pan events
   // graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
   //   calculateOverviewMap()
   // })
+}
+
+function onCenterRoot() {
+  graphDiagram.scale = 1
+  graphDiagram.commandHandler.scrollToPart(graphDiagram.findNodeForKey(1))
 }
 
 // Convert scale to slider value
@@ -174,26 +174,19 @@ function syncSliderWithZoomSlider() {
 function calculateOverviewMap() {
   // console.log('Calculation called.')
   setTimeout(() => {
-    const parentCanvasElement = document.querySelector('#graphDiv>div')
-    const canvasElement = document.querySelector('#graphDiv>div>div')
-    const canvasWidth = canvasElement.offsetWidth === 1 ? parentCanvasElement.offsetWidth : canvasElement.offsetWidth
-    const canvasHeight = canvasElement.offsetHeight === 1 ? parentCanvasElement.offsetHeight : canvasElement.offsetHeight
+    const parentCanvasElement = document.querySelector('#graphDiv>div') as HTMLElement
+    const canvasElement = document.querySelector('#graphDiv>div>div') as HTMLElement
+    const canvasWidth = canvasElement.offsetWidth === 1
+        ? parentCanvasElement.offsetWidth
+        : canvasElement.offsetWidth
+    const canvasHeight = canvasElement.offsetHeight === 1
+        ? parentCanvasElement.offsetHeight
+        : canvasElement.offsetHeight
     const overViewElement = document.getElementById('overviewDiv')
     const height = 100
     overViewElement.style.width = `${canvasWidth * height / canvasHeight}px`
     overViewElement.style.height = `${height}px`
   }, 0)
-}
-
-// Fetch data and update the diagram
-async function fetchClusterData() {
-  try {
-    const response = await axios.get(`http://${window.location.hostname}:5000/cluster/${clusterNumber.value}`)
-    nodes.value = response.data.nodes
-    relations.value = response.data.relations
-  } catch (error) {
-    console.error('There was an error fetching the data:', error)
-  }
 }
 
 function updateModel() {
@@ -204,6 +197,17 @@ function updateModel() {
   calculateOverviewMap()
 }
 
+// Fetch data and update the diagram
+async function fetchClusterData() {
+  try {
+    const result = await props.graphService.getData(clusterNumber.value)
+    nodes.value = result.nodes
+    relations.value = result.relations
+  } catch (error) {
+    console.error('There was an error fetching the data:', error)
+  }
+}
+
 onMounted(() => {
   initDiagram()
   fetchClusterData()
@@ -212,12 +216,19 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-column relative h-full">
-    <div class="relative flex justify-content-between align-items-center my-2 mx-2">
+    <div
+        class="relative flex justify-content-between align-items-center my-2 mx-2"
+    >
       <div class="flex align-items-center gap-2">
-        <Button id="zoomToFit">
+        <Button
+            id="zoomToFit"
+            @click="graphDiagram.commandHandler.zoomToFit()"
+        >
           Zoom to Fit
         </Button>
-        <Button id="centerRoot">
+        <Button
+            @click="onCenterRoot()"
+        >
           Center on root
         </Button>
       </div>
