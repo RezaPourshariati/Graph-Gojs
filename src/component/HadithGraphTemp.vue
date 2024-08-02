@@ -39,8 +39,8 @@ function initDiagram() {
 
   graphDiagram.nodeTemplate = new go.Node('Auto', {})
       .add(
-          new go.Shape('Rectangle', {
-            margin: new go.Margin(0, 0, 0, 0),
+          new go.Shape('RoundedRectangle', {
+            margin: new go.Margin(3, 3, 3, 3),
             strokeWidth: 1,
             stroke: 'orange',
             fill: 'transparent',
@@ -52,17 +52,20 @@ function initDiagram() {
                 const numOfLines = text ? Math.ceil(text.length / 20) : 1
                 return Math.min(20, numOfLines * lineHeight) // we can adjust it
               })),
-          new go.Panel('Table', {
+          new go.Panel('Position', {
             background: 'transparent',
-            defaultAlignment: go.Spot.Left,
           })
-              .addColumnDefinition(0, {width: 350, separatorStrokeWidth: 1, separatorStroke: "blue"})
-              .addRowDefinition(0, {separatorStrokeWidth: 1})
-              .addRowDefinition(1, {separatorStrokeWidth: 1})
+              .add(new go.Shape('MinusLine', {
+                margin: new go.Margin(10, 0, 10, 0),
+                stroke: 'orange', // orange color for the top border
+                strokeWidth: 1, // width of the top border
+                background: 'transparent',
+                position: new go.Point(1, -37),
+                width: shapeWidth,
+                stretch: go.Stretch.Fill,
+              }))
               .add(new go.TextBlock('HadithId Link', { // ------------ Id Link
-                row: 0,
-                column: 0,
-                margin: new go.Margin(8, 8, 8, 8),
+                margin: new go.Margin(8, 0, 0, 0),
                 // background: 'yellow',
                 alignment: go.Spot.Left,
                 stroke: '#ff006e',
@@ -78,20 +81,16 @@ function initDiagram() {
                     window.open(graphService.getUrl(nodeId), '_blank')
                   }
                 },
-                // position: new go.Point(10, -38),
+                position: new go.Point(10, -38),
               }).bind('text', 'hadithId'))
               .add(new go.Panel('Auto', {
-                margin: 0,
-                row: 1,
-                column: 0,
                 background: 'transparent',
-                alignment: go.Spot.Center,
-                // position: new go.Point(2, 0),
+                margin: 0,
+                position: new go.Point(2, 0),
               })
                   .bind('background', 'color')
-                  .add(new go.Shape('Rectangle', {
-                        strokeWidth: 1,
-                        stroke: 'orange',
+                  .add(new go.Shape('RoundedRectangle', {
+                        strokeWidth: 0,
                         fill: 'transparent',
                         width: shapeWidth,
                       }),
