@@ -55,9 +55,10 @@ function initDiagram() {
           new go.Panel('Table', {
             background: 'transparent',
             defaultAlignment: go.Spot.Left,
+            defaultRowSeparatorStroke: "orange",
           })
-              .addColumnDefinition(0, {width: 350, separatorStrokeWidth: 1, separatorStroke: "blue"})
-              .addRowDefinition(0, {separatorStrokeWidth: 1})
+              .addColumnDefinition(0, {width: 350, separatorStrokeWidth: 1, separatorStroke: "orange"})
+              .addRowDefinition(0, {separatorStrokeWidth: 1, background: '#ffffff', separatorStroke: "orange"})
               .addRowDefinition(1, {separatorStrokeWidth: 1})
               .add(new go.TextBlock('HadithId Link', { // ------------ Id Link
                 row: 0,
@@ -81,7 +82,7 @@ function initDiagram() {
                 // position: new go.Point(10, -38),
               }).bind('text', 'hadithId'))
               .add(new go.Panel('Auto', {
-                margin: 0,
+                // margin: 0,
                 row: 1,
                 column: 0,
                 background: 'transparent',
@@ -90,8 +91,8 @@ function initDiagram() {
               })
                   .bind('background', 'color')
                   .add(new go.Shape('Rectangle', {
-                        strokeWidth: 1,
-                        stroke: 'orange',
+                        strokeWidth: 0,
+                        // stroke: 'orange',
                         fill: 'transparent',
                         width: shapeWidth,
                       }),
