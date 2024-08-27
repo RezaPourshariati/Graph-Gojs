@@ -106,7 +106,7 @@ function init() {
     clickedOnNode(key)
   }
 
-  // right clicked in specific node
+  // right-clicked in specific node
   function nodeRightClicked(key, xPos, Ypos) {
     const node = myDiagram.findNodeForKey(key)
 

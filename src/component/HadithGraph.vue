@@ -107,7 +107,8 @@ function initDiagram() {
                         maxLines: 5,
                       })
                           .bind('text', 'hadith'),
-                  )), // End of TextBlock
+                  )
+              ), // End of TextBlock
       )
 
   graphDiagram.linkTemplate = new go.Link({

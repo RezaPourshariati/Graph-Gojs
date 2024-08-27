@@ -1,9 +1,10 @@
 <script setup>
 import go from 'gojs'
+
 let updateModelDataVariable
 
 const $ = go.GraphObject.make
-let myDiagram
+let graphDiagram
 let timer = null
 const WAIT_TIME = 1000 // 1 s
 let selectedKey = -1
@@ -25,22 +26,7 @@ const startTimer = function () {
 }
 
 function init() {
-  // myDiagram = new go.Diagram('myDiagramDiv', {
-  //   initialDocumentSpot: go.Spot.Top,
-  //   initialViewportSpot: go.Spot.Top,
-  //   allowCopy: false,
-  //   allowDelete: false,
-  //   allowMove: false,
-  //   layout: new go.TreeLayout({
-  //     angle: 90,
-  //     layerSpacing: 35,
-  //     isOngoing: false,
-  //   }),
-  //   "undoManager.isEnabled": true,
-  //   "animationManager.isEnabled": false,
-  // });
-
-  myDiagram = new go.Diagram('myDiagramDiv', {
+  graphDiagram = new go.Diagram('DiagramDiv', {
     initialDocumentSpot: go.Spot.Top,
     initialViewportSpot: go.Spot.Top,
     initialAutoScale: go.AutoScale.UniformToFill,
@@ -55,31 +41,31 @@ function init() {
     }),
     // "undoManager.isEnabled": true,
     // "animationManager.isEnabled": false,
-  });
+  })
 
-  const tool = myDiagram.commandHandler;
-  myDiagram.div.setAttribute('class', 'scroll');
+  const tool = graphDiagram.commandHandler;
+  graphDiagram.div.setAttribute('class', 'scroll');
 
   tool.decreaseZoom = () => {
     console.log('my decrease zoom function!');
-    if (myDiagram.scale < 0.3) return;
+    if (graphDiagram.scale < 0.3) return;
     go.CommandHandler.prototype.decreaseZoom.call(tool);
   };
 
   tool.canDecreaseZoom = () => {
-    if (myDiagram.scale >= 0.3) {
+    if (graphDiagram.scale >= 0.3) {
       go.CommandHandler.prototype.decreaseZoom.call(tool);
     }
   };
 
   tool.increaseZoom = () => {
     console.log('my increase zoom function!');
-    if (myDiagram.scale > 2) return;
+    if (graphDiagram.scale > 2) return;
     go.CommandHandler.prototype.increaseZoom.call(tool);
   };
 
   tool.canIncreaseZoom = () => {
-    if (myDiagram.scale <= 2) {
+    if (graphDiagram.scale <= 2) {
       go.CommandHandler.prototype.increaseZoom.call(tool);
     }
   };
@@ -90,7 +76,7 @@ function init() {
   };
 
   const nodeRightClicked = (key, xPos, yPos) => {
-    const node = myDiagram.findNodeForKey(key);
+    const node = graphDiagram.findNodeForKey(key);
     if (node.data.haveRelation === 'true') {
       console.log(node.data.relationIds);
     }
@@ -100,10 +86,10 @@ function init() {
     show: (obj, diagram) => showContextMenu(obj, diagram),
   });
 
-  myDiagram.contextMenu = myContextMenu;
+  graphDiagram.contextMenu = myContextMenu;
 
   const showContextMenu = (obj, diagram) => {
-    const { x, y } = diagram.lastInput.viewPoint;
+    const {x, y} = diagram.lastInput.viewPoint;
 
     if (obj) {
       const key = obj.part.data.key;
@@ -112,7 +98,7 @@ function init() {
   };
 
   const nodeOpenMenuClicked = (e, obj) => {
-    const { x, y } = myDiagram.lastInput.viewPoint;
+    const {x, y} = graphDiagram.lastInput.viewPoint;
 
     if (obj) {
       const node = obj.part;
@@ -131,7 +117,7 @@ function init() {
         selectionObjectName: 'BODY',
         selectionAdorned: false,
       },
-      new go.Panel(go.Panel.Vertical, { name: 'BODY' },
+      new go.Panel(go.Panel.Vertical, {name: 'BODY'},
           new go.Panel(go.Panel.Horizontal,
               go.GraphObject.build("Button", {
                     name: 'Button',
@@ -150,7 +136,7 @@ function init() {
                     click: nodeOpenMenuClicked,
                     margin: new go.Margin(nodeHeightMargin, 0, 0, 0),
                   },
-                  new go.Shape({ geometryString: 'F M0 0 L10 0 5 10z', fill: '#909090', stroke: '#909090' }),
+                  new go.Shape({geometryString: 'F M0 0 L10 0 5 10z', fill: '#909090', stroke: '#909090'}),
                   new go.Binding('visible', 'haveRelation', t => t === 'true'),
               ),
               new go.TextBlock({
@@ -169,7 +155,7 @@ function init() {
                 margin: new go.Margin(0, 0, 0, 0),
               }),
           ),
-          new go.Panel("Auto", { height: 20 }), go.GraphObject.build("TreeExpanderButton"),
+          new go.Panel("Auto", {height: 20}), go.GraphObject.build("TreeExpanderButton"),
       ),
   );
 
@@ -177,10 +163,10 @@ function init() {
         selectionObjectName: 'BODY',
         selectionAdorned: false,
       },
-      new go.Panel(go.Panel.Vertical, { name: 'BODY' },
+      new go.Panel(go.Panel.Vertical, {name: 'BODY'},
           new go.Panel(go.Panel.Horizontal,
               go.GraphObject.build("Button", {
-                  name: 'Button',
+                    name: 'Button',
                     visible: false,
                     // ButtonBorder: {
                     //   fill: 'transparent',
@@ -196,7 +182,7 @@ function init() {
                     click: nodeOpenMenuClicked,
                     margin: new go.Margin(nodeHeightMargin, 0, 0, 0),
                   },
-                  new go.Shape({ geometryString: 'F M0 0 L10 0 5 10z', fill: '#909090', stroke: '#909090' }),
+                  new go.Shape({geometryString: 'F M0 0 L10 0 5 10z', fill: '#909090', stroke: '#909090'}),
                   new go.Binding('visible', 'haveRelation', t => t === 'true'),
               ),
               new go.TextBlock({
@@ -221,9 +207,9 @@ function init() {
   const templmap = new go.Map();
   templmap.add('parent', parentNodeTemplate);
   templmap.add('child', childNodeTemplate);
-  myDiagram.nodeTemplateMap = templmap;
+  graphDiagram.nodeTemplateMap = templmap;
 
-  myDiagram.linkTemplate = new go.Link({
+  graphDiagram.linkTemplate = new go.Link({
         routing: go.Link.Orthogonal,
         corner: 5,
       },
@@ -234,39 +220,39 @@ function init() {
   );
 
   const modelData = [
-    { key: '1', name: 'this is test number one', category: 'parent' },
-    { key: '2', parent: '1', name: 'this is test number two', category: 'parent' },
-    { key: '3', parent: '1', name: 'this is test number three', category: 'child' },
-    { key: '4', parent: '2', name: 'this is test number four', category: 'child' },
-    { key: '5', parent: '2', name: 'this is test number five', category: 'parent' },
-    { key: '6', parent: '5', name: 'this is test number six', category: 'child' },
-    { key: '7', parent: '5', name: 'this is test number seven', category: 'child' },
+    {key: '1', name: 'this is test number one', category: 'parent'},
+    {key: '2', parent: '1', name: 'this is test number two', category: 'parent'},
+    {key: '3', parent: '1', name: 'this is test number three', category: 'child'},
+    {key: '4', parent: '2', name: 'this is test number four', category: 'child'},
+    {key: '5', parent: '2', name: 'this is test number five', category: 'parent'},
+    {key: '6', parent: '5', name: 'this is test number six', category: 'child'},
+    {key: '7', parent: '5', name: 'this is test number seven', category: 'child'},
   ];
 
   selectedNode('1');
-  myDiagram.model = new go.TreeModel(modelData);
+  graphDiagram.model = new go.TreeModel(modelData);
   startTimer();
 }
 
 function zoomToFit() {
-  myDiagram.commandHandler.zoomToFit()
+  graphDiagram.commandHandler.zoomToFit()
   //  nativeHelper.zoomLevelChanged(myDiagram.scale);
 }
 
 function scale(scale) {
-  myDiagram.scale = scale
+  graphDiagram.scale = scale
   // myDiagram.commandHandler.resetZoom();
 }
 
 function scrollToNode(key) {
-  const node = myDiagram.findNodeForKey(key)
+  const node = graphDiagram.findNodeForKey(key)
   if (node !== null)
-    myDiagram.scrollToRect(node.actualBounds)
+    graphDiagram.scrollToRect(node.actualBounds)
 }
 
 function clickedOnNode(key) {
   // iterate over all nodes in Diagram
-  myDiagram.nodes.each((node) => {
+  graphDiagram.nodes.each((node) => {
     const shape = node.findObject('SHAPE')
     const textBlock = node.findObject('TextBlock')
     const picture = node.findObject('Picture')
@@ -293,7 +279,7 @@ function clickedOnNode(key) {
     // }
   })
 
-  const node = myDiagram.findNodeForKey(key)
+  const node = graphDiagram.findNodeForKey(key)
 
   // var shape = node.findObject("SHAPE");
   // shape.fill = "#FF7F7F";
@@ -336,7 +322,7 @@ window.addEventListener('DOMContentLoaded', init)
 </script>
 
 <template>
-  <div id="myDiagramDiv"></div>
+  <div id="DiagramDiv"></div>
 </template>
 
 <style scoped>
