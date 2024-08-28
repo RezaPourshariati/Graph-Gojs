@@ -9,83 +9,87 @@ let myWholeModel = null
 let myLoading = null
 
 function init() {
+  // Initialize the diagram with the specified properties
   graphDiagram = new go.Diagram('DiagramDiv', {
     initialDocumentSpot: go.Spot.Center,
     initialViewportSpot: go.Spot.Center,
-
-    // Do manual layout in the layoutTree function below, rather than automatic layout using a
-    // TreeLayout which would require the Nodes and Links to exist first for an accurate layout.
-    //layout: new go.TreeLayout(
-    //          { nodeSpacing: 4, compaction: go.TreeCompaction.None }),
-    // Assume there's no Layout -- all data.bounds are calculated in layoutTree
-    layout: new go.Layout({isInitial: false, isOngoing: false}), // never invalidates
-
-    // Define the template for Nodes, used by virtualization.
-    nodeTemplate: new go.Node('Auto', {
-      isLayoutPositioned: false,
-      width: 70,
-      height: 20, // in cooperation with the load function, below
-      toolTip: go.GraphObject.build('ToolTip')
-          .add(
-              new go.TextBlock({margin: 3})
-                  .bind('text', '', (d) => 'key: ' + d.key + '\nbounds: ' + d.bounds.toString())
-          )
-    }) // optimization
-        .bindTwoWay('position', 'bounds', (b) => b.position,
-            (p, d) => new go.Rect(p.x, p.y, d.bounds.width, d.bounds.height))
-        .add(
-            new go.Shape('Rectangle').bind('fill', 'color'),
-            new go.TextBlock({margin: 2}).bind('text', 'title')
-        ),
-
-    // Define the template for Links
-    linkTemplate: new go.Link({
-      isLayoutPositioned: false, // optimization
-      fromSpot: HORIZONTAL ? go.Spot.Right : go.Spot.Bottom,
-      toSpot: HORIZONTAL ? go.Spot.Left : go.Spot.Top
-    })
-        .add(
-            new go.Shape()
-        ),
-
-    'animationManager.isEnabled': false
+    layout: new go.Layout({
+      isInitial: false,
+      isOngoing: false, // Disable automatic layout invalidation
+    }),
+    'animationManager.isEnabled': false, // Disable animations
+    isVirtualized: true // Enable virtualization
   });
+  window.graphDiagram = graphDiagram
+  // Define the template for nodes
+  graphDiagram.nodeTemplate =
+      new go.Node('Horizontal', {  // Use a horizontal panel to arrange children
+        isLayoutPositioned: false,
+        toolTip: go.GraphObject.build('ToolTip')
+            .add(
+                new go.TextBlock({margin: 3})
+                    .bind('text', 'title')
+            )
+      })
+          .bindTwoWay('position', 'bounds', (b) => b.position,
+              (p, d) => new go.Rect(p.x, p.y, d.bounds.width, d.bounds.height))
+          .add(
+              new go.Panel('Auto', {  // Container panel for the shape and text
+                width: 70,
+                height: 20 // Defined to match the load function setup
+              }).add(
+                  new go.Shape('Rectangle', {}).bind(
+                      new go.Binding('fill', 'color'),
+                  ),
+                  new go.TextBlock({
+                    margin: 2,
+                    wrap: go.TextBlock.WrapFit,  // Enable text wrapping
+                    overflow: go.TextBlock.OverflowEllipsis,  // Ellipsis for overflow text
+                    editable: true  // Make text editable if needed
+                  }).bind(
+                      new go.Binding('text', 'title')
+                  ),
+              ),
+              go.GraphObject.build('TreeExpanderButton', {  // TreeExpanderButton outside the main content
+                width: 14, height: 14,
+                alignment: go.Spot.Center // Center alignment in the panel
+              })
+          )
 
-  // This model includes all the data
-  myWholeModel = new go.TreeModel(); // must match the TreeModel used by the Diagram, below
 
-  // Do not set graphDiagram.model = myWholeModel -- that would create a zillion Nodes and Links!
-  // In the future Diagram may have built-in support for virtualization.
-  // For now, we have to implement virtualization ourselves by having the Diagram's model
-  // be different from the "real" model.
-  graphDiagram.model = // this only holds nodes that should be in the viewport
-      new go.TreeModel(); // must match the model, above
+  // Define the template for links
+  graphDiagram.linkTemplate = new go.Link({
+    isLayoutPositioned: false, // Optimization for performance
+    fromSpot: HORIZONTAL ? go.Spot.Right : go.Spot.Bottom,
+    toSpot: HORIZONTAL ? go.Spot.Left : go.Spot.Top,
+    routing: go.Routing.Orthogonal,
+    corner: 40,
+  })
+      .add(
+          new go.Shape({strokeWidth: 1})
+      )
+      .add(new go.Shape({
+        toArrow: 'Standard',
+        strokeWidth: 1,
+      }))
 
-  // for now, we have to implement virtualization ourselves
-  graphDiagram.isVirtualized = true;
+  // Initialize model setup (for virtualized use case)
+  myWholeModel = new go.TreeModel(); // Full data model, not directly assigned
+  graphDiagram.model = new go.TreeModel(); // Virtualized model for current viewport
+
+  // Add listeners and elements specific to this diagram
   graphDiagram.addDiagramListener('ViewportBoundsChanged', onViewportChanged);
 
-  // This is a status message
+  // Loading indicator part setup
   const textBlock = new go.TextBlock('loading...', {stroke: 'red', font: '20pt sans-serif'});
   myLoading = new go.Part({layerName: 'ViewportForeground', alignment: go.Spot.Center})
       .add(textBlock);
-
-  // // temporarily add the status indicator
-  // const animate = (state) => {
-  //   textBlock.text = 'loading' + '.'.repeat(state);
-  //   console.log('int');
-  //   setTimeout(() => {
-  //     animate(state++);
-  //   }, 50);
-  // };
-  // animate(0);
   graphDiagram.add(myLoading);
 
-  // Allow the myLoading indicator to be shown now,
-  // but allow objects added in load to also be considered part of the initial Diagram.
-  // If you are not going to add temporary initial Parts, don't call delayInitialization.
+  // Delayed initialization call to load data
   graphDiagram.delayInitialization(load);
 }
+
 
 // implement a wait spinner in HTML with CSS animation
 // function spinDuring(diagram, spinner, compute) {
@@ -186,26 +190,26 @@ function onViewportChanged(e) {
   const diagram = e.diagram;
   // make sure there are Nodes for each node data that is in the viewport
   // or that is connected to such a Node
-  const viewb = diagram.viewportBounds; // the new viewportBounds
+  const viewB = diagram.viewportBounds; // the new viewportBounds
   const model = diagram.model;
 
-  const oldskips = diagram.skipsUndoManager;
+  const oldSkips = diagram.skipsUndoManager;
   diagram.skipsUndoManager = true;
 
   const b = new go.Rect();
-  const ndata = myWholeModel.nodeDataArray;
-  for (let i = 0; i < ndata.length; i++) {
-    const n = ndata[i];
+  const nData = myWholeModel.nodeDataArray;
+  for (let i = 0; i < nData.length; i++) {
+    const n = nData[i];
     if (model.containsNodeData(n)) continue;
     if (!n.bounds) continue;
-    if (n.bounds.intersectsRect(viewb)) {
+    if (n.bounds.intersectsRect(viewB)) {
       model.addNodeData(n);
     }
     // make sure links to all parent nodes appear
-    const parentkey = myWholeModel.getParentKeyForNodeData(n);
-    const parent = myWholeModel.findNodeDataForKey(parentkey);
+    const parentKey = myWholeModel.getParentKeyForNodeData(n);
+    const parent = myWholeModel.findNodeDataForKey(parentKey);
     if (parent !== null) {
-      if (n.bounds.intersectsRect(viewb)) {
+      if (n.bounds.intersectsRect(viewB)) {
         // N is inside viewport
         model.addNodeData(parent); // so that link to parent appears
       } else {
@@ -214,14 +218,14 @@ function onViewportChanged(e) {
         // or if the link might cross over the viewport
         b.set(n.bounds);
         b.unionRect(parent.bounds);
-        if (b.intersectsRect(viewb)) {
+        if (b.intersectsRect(viewB)) {
           model.addNodeData(n); // add N so that link to parent appears
         }
       }
     }
   }
 
-  diagram.skipsUndoManager = oldskips;
+  diagram.skipsUndoManager = oldSkips;
 
   if (myRemoveTimer === null) {
     // only remove offscreen nodes after a delay
@@ -263,6 +267,7 @@ function removeOffscreen(diagram) {
 
   updateCounts(); // only for this sample
 }
+
 // end of virtualized Diagram
 
 // A very simple tree layout.
@@ -335,6 +340,7 @@ function walkTreeV(parent, oldx, oldy) {
   parent.bounds.y = oldy;
   return newx;
 }
+
 // end of layoutTree functionality
 
 // This function is only used in this sample to demonstrate the effects of the virtualization.
@@ -344,6 +350,7 @@ function updateCounts() {
   document.getElementById('myMessage2').textContent = graphDiagram.nodes.count;
   document.getElementById('myMessage4').textContent = graphDiagram.links.count;
 }
+
 window.addEventListener('DOMContentLoaded', init);
 </script>
 
@@ -352,7 +359,8 @@ window.addEventListener('DOMContentLoaded', init);
     <div id="DiagramDiv" style="background-color: white; border: solid 1px black; width: 100%; height: 600px"></div>
     <div id="description">
       <p>This uses a <a>TreeModel</a> but not <a>TreeLayout</a>.</p>
-      Node data in Model: <span id="myMessage1"></span>. Actual Nodes in Diagram: <span id="myMessage2"></span>. Actual Links in Diagram:
+      Node data in Model: <span id="myMessage1"></span>. Actual Nodes in Diagram: <span id="myMessage2"></span>. Actual
+      Links in Diagram:
       <span id="myMessage4"></span>.
     </div>
     <br>
