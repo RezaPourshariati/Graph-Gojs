@@ -48,7 +48,7 @@ function init() {
     'animationManager.isEnabled': false
   });
 
-// This model includes all the data
+  // This model includes all the data
   myWholeModel = new go.TreeModel() // must match the model used by the Diagram, below
 
   // The virtualized layout works on the full model, not on the Diagram Nodes and Links
@@ -94,14 +94,15 @@ function load() {
   // Initialize the data array for the model
   const treeData = []; // Start with an empty array
 
+  const total = tree.length;
   // Process the imported tree data
-  for (let i = 0; i < tree.length; i++) {
+  for (let i = 0; i < total; i++) {
     const node = tree[i]; // Get each node from the tree
-
     const d = {
-      key: node.id, // Use id as the key
-      title: node.title || 'lightgray', // Use color or default to lightgray
-      parent: node.parent || null // Use parent or null if undefined
+      key: node.key, // this node data's key
+      color: go.Brush.randomColor(),
+      title: node.title, // the node's color
+      parent: i > 0 ? node.parent : undefined // the random parent's key
     };
 
     // Customize bounds as needed; existing template is kept simple
@@ -125,9 +126,9 @@ function load() {
 // Nodes and Links existing, so we need to use a function that depends only on the model data.
 function computeDocumentBounds() {
   const b = new go.Rect()
-  const ndata = myWholeModel.nodeDataArray
-  for (let i = 0; i < ndata.length; i++) {
-    const d = ndata[i]
+  const nData = myWholeModel.nodeDataArray
+  for (let i = 0; i < nData.length; i++) {
+    const d = nData[i]
     if (!d.bounds) continue
     if (i === 0) {
       b.set(d.bounds)
@@ -145,27 +146,27 @@ function onViewportChanged(e) {
   const diagram = e.diagram
   // make sure there are Nodes for each node data that is in the viewport
   // or that is connected to such a Node
-  const viewb = diagram.viewportBounds // the new viewportBounds
+  const viewB = diagram.viewportBounds // the new viewportBounds
   const model = diagram.model
 
-  const oldskips = diagram.skipsUndoManager
+  const oldSkips = diagram.skipsUndoManager
   diagram.skipsUndoManager = true
 
   const b = new go.Rect();
-  const ndata = myWholeModel.nodeDataArray;
-  for (let i = 0; i < ndata.length; i++) {
-    const n = ndata[i];
+  const nData = myWholeModel.nodeDataArray;
+  for (let i = 0; i < nData.length; i++) {
+    const n = nData[i];
     if (model.containsNodeData(n)) continue;
     if (!n.bounds) continue;
-    if (n.bounds.intersectsRect(viewb)) {
+    if (n.bounds.intersectsRect(viewB)) {
       model.addNodeData(n);
     }
     if (model instanceof go.TreeModel) {
       // make sure links to all parent nodes appear
-      const parentkey = myWholeModel.getParentKeyForNodeData(n);
-      const parent = myWholeModel.findNodeDataForKey(parentkey);
+      const parentKey = myWholeModel.getParentKeyForNodeData(n);
+      const parent = myWholeModel.findNodeDataForKey(parentKey);
       if (parent !== null) {
-        if (n.bounds.intersectsRect(viewb)) {
+        if (n.bounds.intersectsRect(viewB)) {
           // N is inside viewport
           model.addNodeData(parent); // so that link to parent appears
           const child = diagram.findNodeForData(n);
@@ -190,7 +191,7 @@ function onViewportChanged(e) {
           // or if the link might cross over the viewport
           b.set(n.bounds);
           b.unionRect(parent.bounds);
-          if (b.intersectsRect(viewb)) {
+          if (b.intersectsRect(viewB)) {
             model.addNodeData(n); // add N so that link to parent appears
             const child = diagram.findNodeForData(n);
             if (child !== null) {
@@ -215,22 +216,22 @@ function onViewportChanged(e) {
   }
 
   if (model instanceof go.GraphLinksModel) {
-    const ldata = myWholeModel.linkDataArray;
-    for (let i = 0; i < ldata.length; i++) {
-      const l = ldata[i];
-      const fromkey = myWholeModel.getFromKeyForLinkData(l);
-      if (fromkey === undefined) continue;
-      const from = myWholeModel.findNodeDataForKey(fromkey);
+    const lData = myWholeModel.linkDataArray;
+    for (let i = 0; i < lData.length; i++) {
+      const l = lData[i];
+      const fromKey = myWholeModel.getFromKeyForLinkData(l);
+      if (fromKey === undefined) continue;
+      const from = myWholeModel.findNodeDataForKey(fromKey);
       if (from === null || !from.bounds) continue;
 
-      const tokey = myWholeModel.getToKeyForLinkData(l);
-      if (tokey === undefined) continue;
-      const to = myWholeModel.findNodeDataForKey(tokey);
+      const toKey = myWholeModel.getToKeyForLinkData(l);
+      if (toKey === undefined) continue;
+      const to = myWholeModel.findNodeDataForKey(toKey);
       if (to === null || !to.bounds) continue;
 
       b.set(from.bounds);
       b.unionRect(to.bounds);
-      if (b.intersectsRect(viewb)) {
+      if (b.intersectsRect(viewB)) {
         // also make sure both connected nodes are present,
         // so that link routing is authentic
         model.addNodeData(from);
@@ -253,7 +254,7 @@ function onViewportChanged(e) {
     }
   }
 
-  diagram.skipsUndoManager = oldskips;
+  diagram.skipsUndoManager = oldSkips;
 
   if (myRemoveTimer === null) {
     // only remove offscreen nodes after a delay
@@ -269,7 +270,7 @@ myRemoveTimer = null
 function removeOffscreen(diagram) {
   myRemoveTimer = null;
 
-  const viewb = diagram.viewportBounds;
+  const viewB = diagram.viewportBounds;
   const model = diagram.model;
   const remove = []; // collect for later removal
   const removeLinks = new go.Set(); // links connected to a node data to remove
@@ -278,10 +279,10 @@ function removeOffscreen(diagram) {
     const n = it.value;
     const d = n.data;
     if (d === null) continue;
-    if (!n.actualBounds.intersectsRect(viewb) && !n.isSelected) {
+    if (!n.actualBounds.intersectsRect(viewB) && !n.isSelected) {
       // even if the node is out of the viewport, keep it if it is selected or
       // if any link connecting with the node is still in the viewport
-      if (!n.linksConnected.any((l) => l.actualBounds.intersectsRect(viewb))) {
+      if (!n.linksConnected.any((l) => l.actualBounds.intersectsRect(viewB))) {
         remove.push(d);
         if (model instanceof go.GraphLinksModel) {
           removeLinks.addAll(n.linksConnected);
@@ -291,7 +292,7 @@ function removeOffscreen(diagram) {
   }
 
   if (remove.length > 0) {
-    const oldskips = diagram.skipsUndoManager;
+    const oldSkips = diagram.skipsUndoManager;
     diagram.skipsUndoManager = true;
     model.removeNodeDataCollection(remove);
     if (model instanceof go.GraphLinksModel) {
@@ -299,7 +300,7 @@ function removeOffscreen(diagram) {
         if (!l.isSelected) model.removeLinkData(l.data);
       });
     }
-    diagram.skipsUndoManager = oldskips;
+    diagram.skipsUndoManager = oldSkips;
   }
 
   // updateCounts(); // only for this sample
@@ -383,19 +384,19 @@ class VirtualizedTreeNetwork extends go.TreeNetwork {
   addData(model) {
     if (model instanceof go.TreeModel) {
       const dataVertexMap = new go.Map();
-      const ndata = model.nodeDataArray;
-      for (let i = 0; i < ndata.length; i++) {
-        const d = ndata[i];
+      const nData = model.nodeDataArray;
+      for (let i = 0; i < nData.length; i++) {
+        const d = nData[i];
         const v = this.createVertex();
         v.data = d; // associate this Vertex with data, not a Node
         dataVertexMap.set(d, v);
         this.addVertex(v);
       }
 
-      for (let i = 0; i < ndata.length; i++) {
-        const child = ndata[i];
-        const parentkey = model.getParentKeyForNodeData(child);
-        const parent = model.findNodeDataForKey(parentkey);
+      for (let i = 0; i < nData.length; i++) {
+        const child = nData[i];
+        const parentKey = model.getParentKeyForNodeData(child);
+        const parent = model.findNodeDataForKey(parentKey);
         if (parent !== null) {
           // if there is a parent, there should be an edge
           // now find corresponding vertexes
@@ -428,9 +429,9 @@ class VirtualizedTreeEdge extends go.TreeEdge {
   static _dummyToNode = null;
 
   commit() {
-    const parentv = this.fromVertex;
-    if (!parentv) return;
-    const routed = parentv.alignment === go.TreeAlignment.Start || parentv.alignment === go.TreeAlignment.End;
+    const parentV = this.fromVertex;
+    if (!parentV) return;
+    const routed = parentV.alignment === go.TreeAlignment.Start || parentV.alignment === go.TreeAlignment.End;
     if (this.data && routed) {
       this.link = VirtualizedTreeEdge._dummyLink;
       this.link.fromNode.moveTo(this.fromVertex.x, this.fromVertex.y);
@@ -467,7 +468,7 @@ window.addEventListener('DOMContentLoaded', init);
 <template>
   <div id="sample">
     <div id="myDiagramDiv" style="background-color: white; border: solid 1px black; width: 100%; height: 600px"></div>
-    <img id="mySpinner" src="../../public/spinner.png" alt="spinner-img"/>
+    <img id="mySpinner" src="/spinner.png" alt="spinner-img"/>
   </div>
 </template>
 
@@ -478,6 +479,7 @@ window.addEventListener('DOMContentLoaded', init);
   z-index: 100;
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
