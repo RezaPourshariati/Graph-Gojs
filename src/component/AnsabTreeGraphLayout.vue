@@ -1,71 +1,144 @@
-<script id="code">
+<script setup>
 import go from 'gojs'
+import Slider from 'primevue/slider'
 import tree from '../tree/tree.json'
+import {ref, watch} from "vue";
 
 // this controls whether the tree grows deeper towards the right or downwards:
-const HORIZONTAL = true
+const HORIZONTAL = false
 let graphDiagram = null
 let myWholeModel = null
+const sliderValue = ref(20)
+
+// Watch the PrimeVue slider value and update the diagram scale
+watch(sliderValue, (newValue) => {
+  if (graphDiagram)
+    graphDiagram.scale = valueToScale(newValue)
+})
 
 function init() {
   // ------------------------ creating the diagram
-  graphDiagram = new go.Diagram('myDiagramDiv', {
+  graphDiagram = new go.Diagram('DiagramDiv', {
     initialDocumentSpot: go.Spot.Center,
     initialViewportSpot: go.Spot.Center,
-
-    // Use a virtualized TreeLayout which does not require
-    // that the Nodes and Links exist first for an accurate layout
-    layout: new VirtualizedTreeLayout({angle: HORIZONTAL ? 0 : 90, nodeSpacing: 10}), // --------- Layout
-
-    // Define the template for Nodes, used by virtualization.
-    nodeTemplate: new go.Node('Auto', { // ------------------------------------------------ node template
-      isLayoutPositioned: false,
-      width: 70,
-      height: 20, // in cooperation with the load function, below
-      toolTip: go.GraphObject.build('ToolTip').add(new go.TextBlock({margin: 3})
-          .bind('text', '', (d) => 'key: ' + d.key + '\nbounds: ' + d.bounds.toString()))
-    }) // optimization
-        .bindTwoWay('position', 'bounds', (b) => b.position,
-            (p, d) => new go.Rect(p.x, p.y, d.bounds.width, d.bounds.height))
-        .add(
-            new go.Shape('Rectangle').bind('fill', 'color'),
-            new go.TextBlock({margin: 2}).bind('text', 'color')
-        ),
-
-    // Define the template for Links
-    linkTemplate: new go.Link({ // ------------------------------------------------ link template
-      fromSpot: HORIZONTAL ? go.Spot.Right : go.Spot.Bottom,
-      toSpot: HORIZONTAL ? go.Spot.Left : go.Spot.Top
-    })
-        .add(new go.Shape()),
-
+    layout: new VirtualizedTreeLayout({ // ---------- Layout
+      angle: HORIZONTAL ? 0 : 90,
+      nodeSpacing: 0,
+      layerSpacing: 0,
+    }),
+    'animationManager.isEnabled': false,
     SelectionMoved: (e) => {
       e.subject.each((n) => {
-        if (n instanceof go.Node) n.data.points = undefined
-      })
+        if (n instanceof go.Node) n.data.points = undefined;
+      });
     },
-
-    'animationManager.isEnabled': false
   });
 
+  // Define the template for Nodes, used by virtualization.
+  graphDiagram.nodeTemplate =
+      new go.Node('Vertical', {  // Use a horizontal panel to arrange children
+        isLayoutPositioned: false,
+        isTreeExpanded: true,
+        toolTip: go.GraphObject.build('ToolTip')
+            .add(
+                new go.TextBlock({margin: 3})
+                    .bind('text', 'title')
+            )
+      })
+          .bindTwoWay('position', 'bounds', (b) => b.position,
+              (p, d) => new go.Rect(p.x, p.y, d.bounds.width, d.bounds.height))
+          .add(
+              new go.Panel('Auto', {  // Container panel for the shape and text
+                width: 70,
+                height: 20 // Defined to match the load function setup
+              }).add(
+                  new go.Shape('Rectangle', {}).bind(
+                      new go.Binding('fill', 'color'),
+                  ),
+                  new go.TextBlock({
+                    margin: 2,
+                    wrap: go.TextBlock.WrapFit,  // Enable text wrapping
+                    overflow: go.TextBlock.OverflowEllipsis,  // Ellipsis for overflow text
+                    editable: true  // Make text editable if needed
+                  }).bind(
+                      new go.Binding('text', 'title')
+                  ),
+              ),
+              go.GraphObject.build('TreeExpanderButton', {  // TreeExpanderButton outside the main content
+                width: 14, height: 14,
+                alignment: go.Spot.Center // Center alignment in the panel
+              })
+          )
+
+  // Define the template for links
+  graphDiagram.linkTemplate = new go.Link({
+    isLayoutPositioned: false, // Optimization for performance
+    fromSpot: HORIZONTAL ? go.Spot.Right : go.Spot.Bottom,
+    toSpot: HORIZONTAL ? go.Spot.Left : go.Spot.Top,
+    routing: go.Routing.Orthogonal,
+    corner: 25,
+  })
+      .add(
+          new go.Shape({strokeWidth: 1})
+      )
+      .add(new go.Shape({
+        toArrow: 'Standard',
+        strokeWidth: 1,
+      }))
+
   // This model includes all the data
-  myWholeModel = new go.TreeModel() // must match the model used by the Diagram, below
+  myWholeModel = new go.TreeModel(); // must match the model used by the Diagram, below
 
   // The virtualized layout works on the full model, not on the Diagram Nodes and Links
-  graphDiagram.layout.model = myWholeModel
+  graphDiagram.layout.model = myWholeModel;
 
   // Do not set graphDiagram.model = myWholeModel -- that would create a zillion Nodes and Links!
   // In the future Diagram may have built-in support for virtualization.
   // For now, we have to implement virtualization ourselves by having the Diagram's model
   // be different from the "real" model.
-  graphDiagram.model = // this only holds nodes that should be in the viewport
-      new go.TreeModel() // must match the model, above
+  graphDiagram.model = new go.TreeModel(); // this only holds nodes that should be in the viewport
 
   // for now, we have to implement virtualization ourselves
-  graphDiagram.isVirtualized = true
-  graphDiagram.addDiagramListener('ViewportBoundsChanged', onViewportChanged)
+  graphDiagram.isVirtualized = true;
+  graphDiagram.addDiagramListener('ViewportBoundsChanged', onViewportChanged);
 
-  graphDiagram.delayInitialization((diagram) => spinDuring(diagram, 'mySpinner', load))
+  graphDiagram.delayInitialization((diagram) => spinDuring(diagram, 'Spinner', load));
+  syncSliderWithZoomSlider()
+}
+
+function onCenterRoot() {
+  graphDiagram.scale = 1
+  graphDiagram.commandHandler.scrollToPart(graphDiagram.findNodeForKey(1))
+}
+
+function scaleToValue(scale) {
+  const minScale = 0
+  const maxScale = 5
+  const minValue = -50
+  const maxValue = 100
+
+  return ((scale - minScale) / (maxScale - minScale)) * (maxValue - minValue) + minValue
+}
+
+// Convert slider value to scale
+function valueToScale(value) {
+  const minScale = 0
+  const maxScale = 5
+  const minValue = -50
+  const maxValue = 100
+
+  return ((value - minValue) / (maxValue - minValue)) * (maxScale - minScale) + minScale
+}
+
+function syncSliderWithZoomSlider() {
+  graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
+    // calculateOverviewMap() // Listening to viewport bounds changes for overview map zoom and bounds.
+    // Update PrimeVue slider when ZoomSlider changes
+    if (graphDiagram) {
+      const scale = graphDiagram.scale
+      sliderValue.value = scaleToValue(scale)
+    }
+  })
 }
 
 // implement a wait spinner in HTML with CSS animation
@@ -261,7 +334,7 @@ function onViewportChanged(e) {
     myRemoveTimer = setTimeout(() => removeOffscreen(diagram), 3000);
   }
 
-  // updateCounts(); // only for this sample
+  updateCounts(); // only for this sample
 }
 
 // occasionally remove Parts that are offscreen from the Diagram
@@ -303,7 +376,7 @@ function removeOffscreen(diagram) {
     diagram.skipsUndoManager = oldSkips;
   }
 
-  // updateCounts(); // only for this sample
+  updateCounts(); // only for this sample
 }
 
 // end of virtualized Diagram
@@ -315,6 +388,9 @@ function removeOffscreen(diagram) {
 class VirtualizedTreeLayout extends go.TreeLayout {
   constructor() {
     super()
+    this.angle = 90
+    this.nodeSpacing = 5
+    this.layerSpacing = 40
     this.isOngoing = false
     this.model = null // add this property for holding the whole TreeModel
   }
@@ -453,27 +529,61 @@ class VirtualizedTreeEdge extends go.TreeEdge {
 // This function is only used in this sample to demonstrate the effects of the virtualization.
 // In a real application you would delete this function and all calls to it.
 function updateCounts() {
-  // if (myWholeModel) {
-  //   document.getElementById('myMessage1').textContent = myWholeModel.nodeDataArray.length;
-  // } else {
-  //   console.error("myWholeModel is not initialized!");
-  // }
-  // document.getElementById('myMessage2').textContent = graphDiagram.nodes.count;
-  // document.getElementById('myMessage4').textContent = graphDiagram.links.count;
+  document.getElementById('myMessage1').textContent = myWholeModel.nodeDataArray.length;
+  document.getElementById('myMessage2').textContent = graphDiagram.nodes.count;
+  document.getElementById('myMessage4').textContent = graphDiagram.links.count;
 }
 
 window.addEventListener('DOMContentLoaded', init);
 </script>
 
 <template>
-  <div id="sample">
-    <div id="myDiagramDiv" style="background-color: white; border: solid 1px black; width: 100%; height: 600px"></div>
-    <img id="mySpinner" src="/spinner.png" alt="spinner-img"/>
+  <div class="flex flex-column relative h-full">
+    <div
+        class="relative flex justify-content-between align-items-center my-2 mx-2"
+    >
+      <div class="flex align-items-center gap-2">
+        <Button
+            id="zoomToFit"
+            @click="graphDiagram.commandHandler.zoomToFit()"
+        >
+          Zoom to Fit
+        </Button>
+        <Button
+            @click="onCenterRoot()"
+        >
+          Center on root
+        </Button>
+
+        <div id="description" class="mx-2 font-bold">
+          Node data: <span id="myMessage1" class="text-purple-400"></span>
+          Nodes: <span id="myMessage2" class="text-purple-400"></span>
+          Links: <span id="myMessage4" class="text-purple-400"></span>
+        </div>
+      </div>
+      <div class="flex align-items-center gap-2">
+        <div class="w-10rem flex flex-column align-items-center gap-2 p-2 border-2 border-gray-300 border-round-sm">
+          <div class="w-8rem py-2">
+            <Slider
+                v-model="sliderValue"
+                class="w-full"
+                :min="-50"
+                :max="100"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sample" style="width: 100%; height: 80vh" class="flex-auto m-2 relative">
+      <div id="DiagramDiv" style="background-color: white; border: solid 1px orange; width: 100%; height: 80vh"></div>
+      <img id="Spinner" src="/spinner.png" alt="spinner-img"/>
+    </div>
   </div>
 </template>
 
 <style scoped>
-#mySpinner {
+#Spinner {
   display: none;
   position: absolute;
   z-index: 100;

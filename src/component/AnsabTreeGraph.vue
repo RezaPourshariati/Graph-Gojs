@@ -1,4 +1,4 @@
-<script id="code">
+<script setup>
 import go from 'gojs'
 import tree from '../tree/tree.json'
 
@@ -22,8 +22,7 @@ function init() {
   });
   window.graphDiagram = graphDiagram
   // Define the template for nodes
-  graphDiagram.nodeTemplate =
-      new go.Node('Horizontal', {  // Use a horizontal panel to arrange children
+  graphDiagram.nodeTemplate = new go.Node('Horizontal', {  // Use a horizontal panel to arrange children
         isLayoutPositioned: false,
         toolTip: go.GraphObject.build('ToolTip')
             .add(

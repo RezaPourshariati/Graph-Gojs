@@ -14,7 +14,6 @@ function init() {
   graphDiagram = new go.Diagram('DiagramDiv', {
     initialAutoScale: go.AutoScale.UniformToFill,
     allowMove: false,
-    // define the layout for the diagram
     layout: new go.TreeLayout({
       angle: 90,
       nodeSpacing: 5,
@@ -23,72 +22,73 @@ function init() {
     })
   });
 
-  graphDiagram.div.setAttribute('class', 'scroll')
+  graphDiagram.div.setAttribute('class', 'scroll');
 
-  const tool = graphDiagram.commandHandler
+  const tool = graphDiagram.commandHandler;
 
   tool.decreaseZoom = () => {
-    console.log('my decrease zoom function!')
-    if (graphDiagram.scale < 0.3) return
-    go.CommandHandler.prototype.decreaseZoom.call(tool)
-  }
+    console.log('my decrease zoom function!');
+    if (graphDiagram.scale < 0.3) return;
+    go.CommandHandler.prototype.decreaseZoom.call(tool);
+  };
 
-  tool.canDecreaseZoom = () => graphDiagram.scale >= 0.3
+  tool.canDecreaseZoom = () => graphDiagram.scale >= 0.3;
 
   tool.increaseZoom = () => {
-    console.log('my increase zoom function!')
-    if (graphDiagram.scale > 2) return
-    go.CommandHandler.prototype.increaseZoom.call(tool)
-  }
+    console.log('my increase zoom function!');
+    if (graphDiagram.scale > 2) return;
+    go.CommandHandler.prototype.increaseZoom.call(tool);
+  };
 
-  tool.canIncreaseZoom = () => graphDiagram.scale <= 2
+  tool.canIncreaseZoom = () => graphDiagram.scale <= 2;
 
   const nodeClicked = (e, obj) => {
-    const key = obj.part.data.key
-    clickedOnNode(key)
-  }
+    const key = obj.part.data.key;
+    clickedOnNode(key);
+  };
 
   const nodeRightClicked = (key, xPos, yPos) => {
-    const node = graphDiagram.findNodeForKey(key)
+    const node = graphDiagram.findNodeForKey(key);
     if (node && node.data.haveRelation === 'true') {
-      console.log(node.data.relationIds)
+      console.log(node.data.relationIds);
     }
-  }
+  };
 
   function showContextMenu(obj, diagram) {
-    const {x, y} = diagram.lastInput.viewPoint
+    const {x, y} = diagram.lastInput.viewPoint;
 
     if (obj) {
-      const key = obj.part.data.key
-      nodeRightClicked(key, x, y)
+      const key = obj.part.data.key;
+      nodeRightClicked(key, x, y);
     }
   }
 
   graphDiagram.contextMenu = new go.HTMLInfo({
     show: (obj, diagram) => showContextMenu(obj, diagram)
-  })
+  });
 
   const nodeOpenMenuClicked = (e, obj) => {
-    const {x, y} = graphDiagram.lastInput.viewPoint
+    const {x, y} = graphDiagram.lastInput.viewPoint;
 
     if (obj) {
-      const node = obj.part
-      const key = node.data.key
-      const shape = node.findObject('SHAPE')
-      const textBlock = node.findObject('TextBlock')
-      const h1 = shape ? shape.height : 0
-      const h2 = 40 // Height for textBlock
+      const node = obj.part;
+      const key = node.data.key;
+      const shape = node.findObject('SHAPE');
+      const textBlock = node.findObject('TextBlock');
+      const h1 = shape ? shape.height : 0;
+      const h2 = 40; // Height for textBlock
 
-      nodeRightClicked(key, x + 5, y + h1 + h2 + nodeHeightMargin)
+      nodeRightClicked(key, x + 5, y + h1 + h2 + nodeHeightMargin);
     }
-  }
+  };
 
   // Define a simple node template consisting of text followed by an expand/collapse button
   graphDiagram.nodeTemplate = new go.Node('Vertical', {
-    selectionChanged: nodeSelectionChanged, // this event handler is defined below
+    selectionChanged: nodeSelectionChanged,
+    isTreeExpanded: true, // Initially expand all nodes
   })
       .add(
-          new go.Panel('Auto', {})
+          new go.Panel('Auto')
               .add(
                   new go.Shape({fill: '#1F4963', stroke: null}),
                   new go.TextBlock({
@@ -97,7 +97,17 @@ function init() {
                     margin: 3
                   }).bind('text', 'name')
               ),
-          go.GraphObject.build('TreeExpanderButton')
+          // Expand/collapse button with custom click behavior
+          go.GraphObject.make('TreeExpanderButton', {
+            click: (e, obj) => {
+              const node = obj.part; // the node containing this button
+              if (node.isTreeExpanded) {
+                collapseTree(node);
+              } else {
+                expandTree(node);
+              }
+            }
+          })
       );
 
   graphDiagram.linkTemplate = new go.Link({
@@ -112,7 +122,7 @@ function init() {
       .add(new go.Shape({
         toArrow: 'Standard',
         strokeWidth: 1,
-      }))
+      }));
 
   const modelData = [
     {key: '1', name: 'this is test number one', category: 'parent'},
@@ -124,12 +134,45 @@ function init() {
     {key: '7', parent: '5', name: 'this is test number seven', category: 'child'},
   ];
 
-  // create the model for the DOM tree
   graphDiagram.model = new go.TreeModel({
-    isReadOnly: true, // don't allow the user to delete or copy nodes
-    // build up the tree in an Array of node data
+    isReadOnly: true,
     nodeDataArray: modelData
   });
+
+  // Initially, make all nodes visible (expanded)
+  graphDiagram.nodes.each(node => {
+    node.visible = true;
+    node.isTreeExpanded = true; // Set expanded state
+  });
+
+  function expandTree(node) {
+    node.isTreeExpanded = true; // Mark node as expanded
+    graphDiagram.startTransaction('Expand Node');
+    graphDiagram.nodes.each(child => {
+      if (child.data.parent === node.data.key) {
+        child.visible = true; // Only make direct children visible
+        child.isTreeExpanded = false; // Ensure direct children are not expanded
+      }
+    });
+    graphDiagram.commitTransaction('Expand Node');
+  }
+
+  function collapseTree(node) {
+    node.isTreeExpanded = false; // Mark node as collapsed
+    graphDiagram.startTransaction('Collapse Node');
+    collapseAllDescendants(node);
+    graphDiagram.commitTransaction('Collapse Node');
+  }
+
+  function collapseAllDescendants(node) {
+    graphDiagram.nodes.each(child => {
+      if (child.data.parent === node.data.key) {
+        child.visible = false; // Hide all descendants
+        child.isTreeExpanded = false; // Ensure the expand state is also collapsed
+        collapseAllDescendants(child); // Recursively hide all descendants
+      }
+    });
+  }
 }
 
 function nodeSelectionChanged(_node) {
