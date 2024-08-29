@@ -575,8 +575,8 @@ window.addEventListener('DOMContentLoaded', init);
       </div>
     </div>
 
-    <div id="sample" style="width: 100%; height: 80vh" class="flex-auto m-2 relative">
-      <div id="DiagramDiv" style="background-color: white; border: solid 1px orange; width: 100%; height: 80vh"></div>
+    <div id="sample" style="width: 100%; height: 90vh" class="flex-auto m-2 relative">
+      <div id="DiagramDiv" style="background-color: white; border: solid 1px orange; width: 100%; height: 90vh"></div>
       <img id="Spinner" src="/spinner.png" alt="spinner-img"/>
     </div>
   </div>
