@@ -82,32 +82,32 @@ function initDiagram() {
                 // position: new go.Point(10, -38),
               }).bind('text', 'hadithId'))
               .add(new go.Panel('Auto', {
-                // margin: 0,
-                row: 1,
-                column: 0,
-                background: 'transparent',
-                alignment: go.Spot.Center,
-                // position: new go.Point(2, 0),
-              })
-                  .bind('background', 'color')
-                  .add(new go.Shape('Rectangle', {
-                        strokeWidth: 0,
-                        // stroke: 'orange',
-                        fill: 'transparent',
-                        width: shapeWidth,
-                      }),
-                  )
-                  .add(new go.TextBlock({
-                        margin: new go.Margin(10, 0, 10, 0),
-                        stroke: '#333',
-                        font: 'bold 14pt sans-serif',
-                        width: 320,
-                        isMultiline: true,
-                        textAlign: 'right',
-                        maxLines: 5,
-                      })
-                          .bind('text', 'hadith'),
-                  )
+                    // margin: 0,
+                    row: 1,
+                    column: 0,
+                    background: 'transparent',
+                    alignment: go.Spot.Center,
+                    // position: new go.Point(2, 0),
+                  })
+                      .bind('background', 'color')
+                      .add(new go.Shape('Rectangle', {
+                            strokeWidth: 0,
+                            // stroke: 'orange',
+                            fill: 'transparent',
+                            width: shapeWidth,
+                          }),
+                      )
+                      .add(new go.TextBlock({
+                            margin: new go.Margin(10, 0, 10, 0),
+                            stroke: '#333',
+                            font: 'bold 14pt sans-serif',
+                            width: 320,
+                            isMultiline: true,
+                            textAlign: 'right',
+                            maxLines: 5,
+                          })
+                              .bind('text', 'hadith'),
+                      )
               ), // End of TextBlock
       )
 

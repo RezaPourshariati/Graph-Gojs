@@ -1,18 +1,14 @@
-<script setup>
+<script setup lang="ts">
 import go from 'gojs'
 import treeModelData from '../tree/tree2.json'
 import Slider from "primevue/slider";
-import {ref, watch} from "vue";
+import {onMounted, ref, watch} from "vue";
 
 let graphDiagram
-let timer = null
-const WAIT_TIME = 1000 // 1 s
 let selectedKey = -1
-const nodeCircleSize = 15
-const nodeImageHeight = 48 / 3
-const nodeImageWidth = 42 / 3
 const nodeHeightMargin = 5
-const sliderValue = ref(20)
+const sliderValue = ref(1)
+const horizontalLayout = ref(false)
 const nodeNumber = ref()
 
 // Watch the PrimeVue slider value and update the diagram scale
@@ -21,10 +17,15 @@ watch(sliderValue, (newValue) => {
     graphDiagram.scale = valueToScale(newValue)
 })
 
+watch(() => treeModelData, () => {
+  updateModel()
+})
+
 function init() {
   graphDiagram = new go.Diagram('DiagramDiv', {
-    initialAutoScale: go.AutoScale.UniformToFill,
+    // initialAutoScale: go.AutoScale.UniformToFill,
     allowMove: false,
+    initialScale: 1,
     layout: new go.TreeLayout({
       angle: 90,
       nodeSpacing: 5,
@@ -91,9 +92,9 @@ function init() {
 
       nodeRightClicked(key, x + 5, y + h1 + h2 + nodeHeightMargin);
     }
-  };
+  }
 
-  graphDiagram.nodeTemplate = new go.Node('Vertical', {
+  graphDiagram.nodeTemplate = new go.Node(nodeLayoutType(), {
     selectionChanged: nodeSelectionChanged,
     isTreeExpanded: true, // Initially expand all nodes
   })
@@ -102,18 +103,20 @@ function init() {
               .add(
                   new go.Shape({
                     name: 'SHAPE',
-                    fill: go.Brush.randomColor(),
-                    stroke: 'orange',
-                    strokeWidth: 1
-                  }).bind('fill', '', () => go.Brush.randomColor()),
+                    fill: 'transparent',
+                    stroke: 'transparent',
+                    // strokeWidth: 1,
+                  }),
                   new go.TextBlock({
-                    font: 'bold 13px Helvetica, bold Arial, sans-serif',
+                    font: '13px Iransans, Arial, sans-serif',
                     stroke: '#212121',
-                    margin: 3
-                  }).bind('text', 'title')
+                    margin: 3,
+                  }).bind('text', 'title'),
               ),
           // Expand/collapse button with custom click behavior
-          go.GraphObject.make('TreeExpanderButton')
+          go.GraphObject.make('TreeExpanderButton', {
+            'ButtonBorder.figure': 'Circle',
+          })
       )
 
   graphDiagram.linkTemplate = new go.Link({
@@ -133,13 +136,52 @@ function init() {
   graphDiagram.model = new go.TreeModel({
     isReadOnly: true,
     nodeDataArray: treeModelData
-  });
+  })
+
+  // Override the default doKeyDown method to handle custom key commands
+  graphDiagram.commandHandler.doKeyDown = function () {
+    const e = graphDiagram.lastInput
+
+    switch (e.key) {
+      case 'ArrowUp':
+        goToParent()
+        break
+      case 'ArrowDown':
+        goToFirstChild()
+        break
+      case 'ArrowLeft':
+        goToPreviousSibling()
+        break
+      case 'ArrowRight':
+        goToNextSibling()
+        break
+      default:
+        // Call the base method
+        go.CommandHandler.prototype.doKeyDown.call(this)
+        break
+    }
+  }
+
+  const overView = new go.Overview('overviewDiv', {observed: graphDiagram})
+
   syncSliderWithZoomSlider()
 }
+
+onMounted(() => {
+  setTimeout(() => {
+    onCenterRoot()
+  }, 100)
+})
 
 function onCenterRoot() {
   graphDiagram.scale = 1
   graphDiagram.commandHandler.scrollToPart(graphDiagram.findNodeForKey(1))
+}
+
+function nodeLayoutType(): string | undefined {
+  if (horizontalLayout)
+    return horizontalLayout ? 'Horizontal' : 'Vertical'
+  else return undefined
 }
 
 function nodeSelectionChanged(_node) {
@@ -151,18 +193,13 @@ function goToNode() {
     console.log('Please enter a valid node number.')
     return
   }
+
   const nodeData = graphDiagram.findNodeForKey(nodeNumber.value)
-
-  // Search for the node in the diagram's model data by 'id'
-  // const nodeDataArray = graphDiagram.model.nodeDataArray
-  // const nodeData = nodeDataArray.find(node => node.id === nodeNumber.value)
-
   if (nodeData) {
     graphDiagram.select(nodeData) // Select the node
     graphDiagram.centerRect(nodeData.actualBounds) // Center on the selected node
     document.getElementById('nodeNumberInput').focus()
-  }
-  else {
+  } else {
     console.log('Node not found. Please enter a valid node number.')
   }
 }
@@ -188,13 +225,123 @@ function valueToScale(value) {
 
 function syncSliderWithZoomSlider() {
   graphDiagram.addDiagramListener('ViewportBoundsChanged', (_e) => {
-    // calculateOverviewMap() // Listening to viewport bounds changes for overview map zoom and bounds.
+    calculateOverviewMap() // Listening to viewport bounds changes for overview map zoom and bounds.
     // Update PrimeVue slider when ZoomSlider changes
     if (graphDiagram) {
       const scale = graphDiagram.scale
       sliderValue.value = scaleToValue(scale)
     }
   })
+}
+
+function calculateOverviewMap() {
+  // console.log('Calculation called.')
+  setTimeout(() => {
+    const parentCanvasElement = document.querySelector('#DiagramDiv>div') as HTMLElement
+    const canvasElement = document.querySelector('#DiagramDiv>div>div') as HTMLElement
+    const canvasWidth = canvasElement.offsetWidth === 1
+        ? parentCanvasElement.offsetWidth
+        : canvasElement.offsetWidth
+    const canvasHeight = canvasElement.offsetHeight === 1
+        ? parentCanvasElement.offsetHeight
+        : canvasElement.offsetHeight
+    const overViewElement = document.getElementById('overviewDiv')
+    const height = 100
+    overViewElement.style.width = `${canvasWidth * height / canvasHeight}px`
+    overViewElement.style.height = `${height}px`
+  }, 0)
+}
+
+function goToParent() {
+  const selectedNode = graphDiagram.selection.first()
+  if (!selectedNode)
+    return
+
+  const parentNode = selectedNode.findTreeParentNode()
+  if (parentNode) {
+    graphDiagram.select(parentNode)
+    graphDiagram.scrollToRect(parentNode.actualBounds)
+  }
+}
+
+function goToFirstChild() {
+  const selectedNode = graphDiagram.selection.first()
+  if (!selectedNode)
+    return
+
+  const firstChild = selectedNode.findTreeChildrenNodes().first()
+  if (firstChild) {
+    graphDiagram.select(firstChild)
+    graphDiagram.scrollToRect(firstChild.actualBounds)
+  }
+}
+
+function goToPreviousSibling() {
+  const selectedNode = graphDiagram.selection.first()
+  if (!selectedNode)
+    return
+
+  const parentKey = selectedNode.data.parent
+  if (parentKey) {
+    const siblings = graphDiagram.model.nodeDataArray.filter(node => node.parent === parentKey)
+    const selectedKey = selectedNode.data.key
+
+    // Find the index of the selected sibling
+    const index = siblings.findIndex(sibling => sibling.key === selectedKey)
+
+    if (index > 0) { // Check if there is a previous sibling
+      const prevSibling = siblings[index - 1]
+      const findNodeForKey = graphDiagram.findNodeForKey(prevSibling.key)
+      graphDiagram.select(findNodeForKey)
+      graphDiagram.scrollToRect(findNodeForKey.actualBounds)
+      // graphDiagram.centerRect(graphDiagram.findNodeForKey(prevSibling.key).actualBounds)
+    }
+  }
+}
+
+function goToNextSibling() {
+  const selectedNode = graphDiagram.selection.first()
+  if (!selectedNode)
+    return
+
+  const parentKey = selectedNode.data.parent
+  if (parentKey) {
+    const siblings = graphDiagram.model.nodeDataArray.filter(node => node.parent === parentKey)
+    const selectedKey = selectedNode.data.key
+
+    // Find the index of the selected sibling
+    const index = siblings.findIndex(sibling => sibling.key === selectedKey)
+
+    if (index >= 0 && index < siblings.length - 1) { // Check if there is a next sibling
+      const nextSibling = siblings[index + 1]
+      const findNodeForKey = graphDiagram.findNodeForKey(nextSibling.key)
+      graphDiagram.select(findNodeForKey)
+      graphDiagram.scrollToRect(findNodeForKey.actualBounds) // Scroll to the first node to ensure it is visible
+      // graphDiagram.centerRect(graphDiagram.findNodeForKey(nextSibling.key).actualBounds)
+    }
+  }
+}
+
+function updateModel() {
+  if (graphDiagram)
+    delete graphDiagram.model
+
+  graphDiagram.model = new go.TreeModel({
+    isReadOnly: true,
+    nodeDataArray: treeModelData
+  })
+  calculateOverviewMap()
+}
+
+function changeLayoutAngle() {
+  horizontalLayout.value = !horizontalLayout.value
+  const currentLayout = graphDiagram.layout
+
+  if (currentLayout instanceof go.TreeLayout)
+    currentLayout.angle = horizontalLayout.value ? 0 : 90
+
+  // Re-layout to apply the new angle
+  graphDiagram.layoutDiagram(true)
 }
 
 // ---------------------------------------------------------------------------------- Functions for Qt App
@@ -270,8 +417,6 @@ function selectedNode(key) {
   selectedKey = key;
 }
 
-// --------------------------------------------------------------------
-
 window.addEventListener('DOMContentLoaded', init);
 </script>
 
@@ -292,6 +437,12 @@ window.addEventListener('DOMContentLoaded', init);
         >
           Center on root
         </Button>
+        <Button
+            id="Layout"
+            @click="changeLayoutAngle"
+        >
+          Change Layout
+        </Button>
       </div>
       <div class="flex align-items-center gap-2">
         <InputNumber
@@ -300,7 +451,7 @@ window.addEventListener('DOMContentLoaded', init);
             id="nodeNumberInput"
             mode="decimal"
             show-buttons
-            :min="3"
+            :min="1"
             :max="7999"
             fluid
             class=""
@@ -330,11 +481,11 @@ window.addEventListener('DOMContentLoaded', init);
           id="DiagramDiv"
           class="h-full border-1 border-gray-500"
       />
-      <!--      <div-->
-      <!--          id="overviewDiv"-->
-      <!--          class="absolute top-0 left-0 z-4 border-1 border-gray-700"-->
-      <!--          style="height: 10%; width: 10%"-->
-      <!--      />-->
+      <div
+          id="overviewDiv"
+          class="absolute top-0 left-0 z-4 border-1 border-orange-700"
+          style="height: 20%; width: 20%"
+      />
     </div>
   </div>
 </template>
