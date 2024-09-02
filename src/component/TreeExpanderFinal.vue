@@ -27,7 +27,7 @@ function init() {
     allowMove: false,
     initialScale: 1,
     layout: new go.TreeLayout({
-      angle: 90,
+      angle: horizontalLayout.value ? 0 : 90,
       nodeSpacing: 5,
       layerSpacing: 30,
       arrangement: go.TreeArrangement.FixedRoots
@@ -94,30 +94,31 @@ function init() {
     }
   }
 
-  graphDiagram.nodeTemplate = new go.Node(nodeLayoutType(), {
-    selectionChanged: nodeSelectionChanged,
-    isTreeExpanded: true, // Initially expand all nodes
-  })
-      .add(
-          new go.Panel('Auto')
-              .add(
-                  new go.Shape({
-                    name: 'SHAPE',
-                    fill: 'transparent',
-                    stroke: 'transparent',
-                    // strokeWidth: 1,
-                  }),
-                  new go.TextBlock({
-                    font: '13px Iransans, Arial, sans-serif',
-                    stroke: '#212121',
-                    margin: 3,
-                  }).bind('text', 'title'),
-              ),
-          // Expand/collapse button with custom click behavior
-          go.GraphObject.make('TreeExpanderButton', {
-            'ButtonBorder.figure': 'Circle',
-          })
-      )
+  NodeTemplate()
+  // graphDiagram.nodeTemplate = new go.Node('Vertical', {
+  //   selectionChanged: nodeSelectionChanged,
+  //   isTreeExpanded: true, // Initially expand all nodes
+  // })
+  //     .add(
+  //         new go.Panel('Auto')
+  //             .add(
+  //                 new go.Shape({
+  //                   name: 'SHAPE',
+  //                   fill: 'transparent',
+  //                   stroke: 'transparent',
+  //                   // strokeWidth: 1,
+  //                 }),
+  //                 new go.TextBlock({
+  //                   font: '13px Iransans, Arial, sans-serif',
+  //                   stroke: '#212121',
+  //                   margin: 3,
+  //                 }).bind('text', 'title'),
+  //             ),
+  //         // Expand/collapse button with custom click behavior
+  //         go.GraphObject.make('TreeExpanderButton', {
+  //           'ButtonBorder.figure': 'Circle',
+  //         })
+  //     )
 
   graphDiagram.linkTemplate = new go.Link({
     fromEndSegmentLength: 10,
@@ -167,21 +168,56 @@ function init() {
   syncSliderWithZoomSlider()
 }
 
-onMounted(() => {
-  setTimeout(() => {
-    onCenterRoot()
-  }, 100)
-})
+// Function to determine the node layout type
+function nodeLayoutType() {
+  return horizontalLayout.value ? 'Horizontal' : 'Vertical';
+}
+
+// Function to update the node template dynamically
+function NodeTemplate() {
+  graphDiagram.nodeTemplate = new go.Node(nodeLayoutType(), {
+    selectionChanged: nodeSelectionChanged,
+    isTreeExpanded: true, // Initially expand all nodes
+  })
+      .add(
+          new go.Panel('Auto')
+              .add(
+                  new go.Shape({
+                    name: 'SHAPE',
+                    fill: 'transparent',
+                    stroke: 'transparent',
+                  }),
+                  new go.TextBlock({
+                    font: '13px Iransans, Arial, sans-serif',
+                    stroke: '#212121',
+                    margin: 3,
+                  }).bind('text', 'title'),
+              ),
+          go.GraphObject.make('TreeExpanderButton', {
+            'ButtonBorder.figure': 'Circle',
+          })
+      );
+}
+
+// Function to toggle the layout and node type
+function changeLayoutAngleAndNodeType() {
+  graphDiagram.startTransaction("toggle layout and node type")
+  horizontalLayout.value = !horizontalLayout.value
+  const currentLayout = graphDiagram.layout
+
+  if (currentLayout instanceof go.TreeLayout)
+    currentLayout.angle = horizontalLayout.value ? 0 : 90
+
+  // Re-layout to apply the new angle
+  graphDiagram.layoutDiagram(true)
+  NodeTemplate() // update creating node template
+  calculateOverviewMap()
+  graphDiagram.commitTransaction("toggle layout and node type")
+}
 
 function onCenterRoot() {
   graphDiagram.scale = 1
   graphDiagram.commandHandler.scrollToPart(graphDiagram.findNodeForKey(1))
-}
-
-function nodeLayoutType(): string | undefined {
-  if (horizontalLayout)
-    return horizontalLayout ? 'Horizontal' : 'Vertical'
-  else return undefined
 }
 
 function nodeSelectionChanged(_node) {
@@ -333,16 +369,11 @@ function updateModel() {
   calculateOverviewMap()
 }
 
-function changeLayoutAngle() {
-  horizontalLayout.value = !horizontalLayout.value
-  const currentLayout = graphDiagram.layout
-
-  if (currentLayout instanceof go.TreeLayout)
-    currentLayout.angle = horizontalLayout.value ? 0 : 90
-
-  // Re-layout to apply the new angle
-  graphDiagram.layoutDiagram(true)
-}
+onMounted(() => {
+  setTimeout(() => {
+    onCenterRoot()
+  }, 100)
+})
 
 // ---------------------------------------------------------------------------------- Functions for Qt App
 
@@ -439,7 +470,7 @@ window.addEventListener('DOMContentLoaded', init);
         </Button>
         <Button
             id="Layout"
-            @click="changeLayoutAngle"
+            @click="changeLayoutAngleAndNodeType"
         >
           Change Layout
         </Button>
