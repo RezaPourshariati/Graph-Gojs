@@ -210,7 +210,8 @@ function changeLayoutAngleAndNodeType() {
 
   // Re-layout to apply the new angle
   graphDiagram.layoutDiagram(true)
-  NodeTemplate() // update creating node template
+  NodeTemplate() // update creating node template (node type)
+  onCenterRoot()
   calculateOverviewMap()
   graphDiagram.commitTransaction("toggle layout and node type")
 }
