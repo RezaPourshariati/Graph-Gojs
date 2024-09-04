@@ -44,7 +44,9 @@ function init() {
     routing: go.Routing.Orthogonal,
     corner: 10,
   })
-      .add(new go.Shape({strokeWidth: 1}))
+      .add(new go.Shape({
+        strokeWidth: 1,
+      }))
       .add(new go.Shape({
         toArrow: 'Standard',
         strokeWidth: 1,
@@ -93,6 +95,8 @@ function init() {
   syncSliderWithZoomSlider()
 }
 
+// ------------------------------------------------------------------------------------ end of init() function
+
 // function toggleNodeCollapseExpand() {
 //   const selectedNode = graphDiagram.selection.first();  // Get the currently selected node
 //
@@ -105,7 +109,7 @@ function init() {
 //   }
 // }
 
-function toggleNodeCollapseExpand() {
+function toggleNodeCollapseExpand() { // controlled by enter keyword
   const selectedNode = graphDiagram.selection.first(); // Get the currently selected node
   if (selectedNode) {
     if (selectedNode.isTreeExpanded) {
@@ -117,31 +121,27 @@ function toggleNodeCollapseExpand() {
 }
 
 function expandTree(node) {
-  node.isTreeExpanded = true; // Mark node as expanded
+  node.isTreeExpanded = true;
   graphDiagram.startTransaction('Expand Node');
-  graphDiagram.nodes.each(child => {
-    if (child.data.parent === node.data.key) {
-      child.visible = true; // Only make direct children visible
-      child.isTreeExpanded = false; // Ensure direct children are not expanded
-    }
+  node.findTreeChildrenNodes().each(child => {
+    child.visible = true;
+    child.isTreeExpanded = false;
   });
   graphDiagram.commitTransaction('Expand Node');
 }
 
 function collapseTree(node) {
-  node.isTreeExpanded = false; // Mark node as collapsed
+  node.isTreeExpanded = false;
   graphDiagram.startTransaction('Collapse Node');
   collapseAllDescendants(node);
   graphDiagram.commitTransaction('Collapse Node');
 }
 
 function collapseAllDescendants(node) {
-  graphDiagram.nodes.each(child => {
-    if (child.data.parent === node.data.key) {
-      child.visible = false; // Hide all descendants
-      child.isTreeExpanded = false; // Ensure the expand state is also collapsed
-      collapseAllDescendants(child); // Recursively hide all descendants
-    }
+  node.findTreeChildrenNodes().each(child => {
+    // child.visible = true; // ------------------------------
+    child.isTreeExpanded = false;
+    collapseAllDescendants(child);
   });
 }
 
@@ -172,6 +172,14 @@ function NodeTemplate() {
               ),
           go.GraphObject.make('TreeExpanderButton', {
             'ButtonBorder.figure': 'Circle',
+            click: (e, obj) => {
+              const node = obj.part; // the node containing this button
+              if (node.isTreeExpanded) {
+                collapseTree(node);
+              } else {
+                expandTree(node);
+              }
+            }
           })
       );
 }
@@ -208,7 +216,8 @@ function collapseAll() {
   // Loop through all nodes in the diagram and collapse them
   graphDiagram.nodes.each((node) => {
     if (node instanceof go.Node) {
-      node.isTreeExpanded = false;  // Collapse node
+      node.isTreeExpanded = false // Collapse node
+      // collapseAllDescendants(node)
     }
   });
 
@@ -222,7 +231,7 @@ function expandAll() {
   // Loop through all nodes in the diagram and expand them
   graphDiagram.nodes.each((node) => {
     if (node instanceof go.Node) {
-      node.isTreeExpanded = true;  // Expand node
+      node.isTreeExpanded = true // Expand node
     }
   });
 
@@ -240,7 +249,7 @@ function goToNode() {
   }
 
   const nodeData = graphDiagram.findNodeForKey(nodeNumber.value)
-  if (nodeData) {
+  if (nodeData && nodeData.isVisible()) {
     graphDiagram.select(nodeData) // Select the node
     graphDiagram.centerRect(nodeData.actualBounds) // Center on the selected node
     document.getElementById('nodeNumberInput').focus()
@@ -298,29 +307,26 @@ function calculateOverviewMap() {
 }
 
 function goToParent() {
-  const selectedNode = graphDiagram.selection.first()
-  if (!selectedNode)
-    return
+  const selectedNode = graphDiagram.selection.first();
+  if (!selectedNode) return;
 
-  const parentNode = selectedNode.findTreeParentNode()
-  if (parentNode) {
-    graphDiagram.select(parentNode)
-    graphDiagram.scrollToRect(parentNode.actualBounds)
+  const parentNode = selectedNode.findTreeParentNode();
+  if (parentNode && parentNode.isVisible()) {
+    graphDiagram.select(parentNode);
+    graphDiagram.scrollToRect(parentNode.actualBounds);
   }
 }
 
 function goToFirstChild() {
-  const selectedNode = graphDiagram.selection.first()
-  if (!selectedNode)
-    return
+  const selectedNode = graphDiagram.selection.first();
+  if (!selectedNode || !selectedNode.isTreeExpanded) return;
 
-  const firstChild = selectedNode.findTreeChildrenNodes().first()
-  if (firstChild) {
-    graphDiagram.select(firstChild)
-    graphDiagram.scrollToRect(firstChild.actualBounds)
+  const firstChild = selectedNode.findTreeChildrenNodes().first();
+  if (firstChild && firstChild.isVisible()) {
+    graphDiagram.select(firstChild);
+    graphDiagram.scrollToRect(firstChild.actualBounds);
   }
 }
-
 function goToPreviousSibling() {
   const selectedNode = graphDiagram.selection.first()
   if (!selectedNode)
